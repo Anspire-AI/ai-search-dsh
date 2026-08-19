@@ -1,6 +1,6 @@
 {
   "name": "anspire-ai-search-dsh-plugin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Anspire AI Search plugin for DeepSeek Harness (dsh) — 全网搜索 + 垂域结构化数据",
   "type": "module",
   "main": "index.js",
@@ -18,10 +18,6 @@
     "search",
     "anspire"
   ],
-  "peerDependencies": {
-    "@deepseek-ai/cordis": "*",
-    "@deepseek-ai/dsh-tools": "*"
-  },
   "engines": {
     "node": ">=18"
   },

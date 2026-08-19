@@ -10,6 +10,18 @@
 - 初始化仓库：README、.gitignore、CHANGELOG。
 - 建立 Agent Workspace v2 工作区：`code/`（develop）、`BA/`（demand）、`Deploy/`(deploy)。
 
+## [0.1.1] - 2026-08-19
+
+### Fixed
+- 修复插件安装后不加载的问题 (REQ-002)：
+  - `index.js` 移除 TypeScript 语法（`import type`），改为纯 JavaScript —— 此前 Node 解析即崩，dsh 中看不到工具。
+  - `src/tool.js` 移除对 `@deepseek-ai/dsh-tools` 的运行时导入 —— pnpm 默认不自动安装 peer 依赖，导入即 `ERR_MODULE_NOT_FOUND`。改为手工构建 `ToolDefinition`（`ctx.tools.register()` 接受普通对象，`defineTool` 仅是编译辅助器），参数使用编译后的 JSON Schema 形态。
+  - `package.json` 移除 `peerDependencies` 声明（不再依赖），消除安装警告。
+- `apply()` 返回 unregister disposer。
+
+### Added
+- 插件加载回归测试（`test/plugin.test.js`）：守护 import → apply → register → execute 全链路，防止语法/依赖问题再次静默回归。
+
 ## [0.1.0] - 2026-08-19
 
 ### Added
