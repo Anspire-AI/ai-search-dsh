@@ -1,55 +1,78 @@
-# anspire-ai-search
+# anspire-ai-search-dsh-plugin
 
-AI 搜索服务。
+[Anspire AI Search](https://open.anspire.cn) 的 [DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) 插件。
 
-## 工作区结构（Agent Workspace v2）
+为 agent 提供全网搜索能力：网页 / 图片 / 视频检索 + 垂域结构化数据（天气、股票、汇率、油价、万年历等），作为回答实时性问题的依据。
 
-本仓库基于 Git Worktree 组织多 Agent 协作，根目录即中央仓库（`main` 分支）：
-
-```
-anspire-ai-search/               # 中央仓库（main 分支）
-├── .git/
-├── BA/                          # [worktree] demand 分支 - 需求管理
-├── code/                        # [worktree] develop 分支 - CI 只读
-├── Deploy/                      # [worktree] deploy 分支 - 部署配置
-├── feature-REQ-xxx/             # [worktree] feature/REQ-xxx 分支 - 开发（按需创建）
-├── hotfix-xxx/                  # [worktree] hotfix/xxx 分支 - 紧急修复（按需创建）
-├── README.md
-├── CHANGELOG.md
-└── .gitignore
-```
-
-## 分支与工作区
-
-| 分支 | Worktree | 用途 | 写入者 |
-|------|----------|------|--------|
-| `main` | 根目录 | 生产发布标记 | 仅从 release 合并 |
-| `develop` | `code/` | 主开发分支，CI 构建 | 合并，不直接写 |
-| `demand` | `BA/` | 需求管理 | BA Agent |
-| `deploy` | `Deploy/` | 部署配置 | Deploy Agent / CI |
-| `feature/REQ-xxx` | `feature-REQ-xxx/` | 需求开发 | Dev Agent |
-| `release/vx.y.z` | — | 预发布 | 发布管理员 |
-| `hotfix/xxx` | `hotfix-xxx/` | 紧急修复（基于 main） | Dev Agent |
-
-## 命名规范
-
-- 需求编号：`REQ-{三位数字}`，如 `REQ-001`
-- Commit Message：`[{区域}] {描述} (关联: {需求ID})`
-- 镜像 Tag：默认 `{GIT_SHA}`，发布用 `{GIT_TAG}`
-
-## 常用命令
+## 安装
 
 ```bash
-# 创建需求开发 worktree（BA Agent 执行）
-git worktree add feature-REQ-001 feature/REQ-001
+# 从 GitHub 安装（推荐固定 commit）
+dsh plugin --profile <name> add github:myg133/anspire-ai-search#<sha>
 
-# 同步 develop 到本地
-git fetch origin && git rebase origin/develop
-
-# 清理已合并的 worktree
-git worktree remove feature-REQ-001
-git branch -d feature/REQ-001
-git push origin --delete feature/REQ-001
+# 或从 npm（发布后）
+dsh plugin --profile <name> add anspire-ai-search-dsh-plugin
 ```
 
-详细规范参见各 worktree 内的 README。
+> 本插件为纯 JavaScript（无构建步骤），通过 GitHub 安装无需在 `pnpm-workspace.yaml` 中放行构建。
+
+## 配置
+
+### API KEY（必需）
+
+```bash
+export ANSPIRE_API_KEY="你的 key"   # 获取: https://open.anspire.cn
+```
+
+兼容的环境变量名：`ANSPIRE_API_KEY` > `ANPSIRE_API_KEY` > `DSP_ANSPIRE_KEY`（按此顺序取第一个非空）。
+
+### 插件配置（可选，通过 patch 覆盖）
+
+默认配置（`index.js`）：
+
+```js
+{
+  baseUrl: 'https://plugin.anspire.cn',
+  timeoutMs: 30_000,
+  defaultTopK: 10,
+}
+```
+
+在 profile 级 `cordis.patch.yml` 中覆盖（注意 `config` 是整体替换，需重述全部键）：
+
+```yaml
+- id: anspire-ai-search
+  name: 'anspire-ai-search-dsh-plugin'
+  config:
+    baseUrl: 'https://plugin.anspire.cn'
+    timeoutMs: 20000
+    defaultTopK: 20
+```
+
+## 提供的工具
+
+### `anspire_search`
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `query` | string | ✅ | 搜索词，≤64 字符 |
+| `topK` | number | | 返回条数 10/20/30/40/50，默认 10 |
+| `insite` | string | | 限定站点，逗号分隔，最多 20 个 |
+| `fromTime` | string | | 起始时间 `2025-01-01 00:00:00` |
+| `toTime` | string | | 结束时间 |
+| `searchType` | string | | `web`（默认）/ `image` / `video` |
+| `regionMode` | number | | `0` 国内（默认）/ `1` 海外 / `2` 混合 |
+
+输出为编号列表文本：标题 / 摘要 / 链接 / 日期 / 相关度。垂类词（如「北京天气」）自动返回结构化垂域数据。
+
+## 开发
+
+```bash
+git clone git@github.com:myg133/anspire-ai-search.git
+cd anspire-ai-search/feature-REQ-001   # 或直接在 bundle 目录
+node --test test/                      # 运行测试（Node ≥18，零依赖）
+```
+
+## License
+
+MIT

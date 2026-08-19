@@ -1,0 +1,33 @@
+{
+  "name": "anspire-ai-search-dsh-plugin",
+  "version": "0.1.0",
+  "description": "Anspire AI Search plugin for DeepSeek Harness (dsh) — 全网搜索 + 垂域结构化数据",
+  "type": "module",
+  "main": "index.js",
+  "license": "MIT",
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "src/",
+    "README.md"
+  ],
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "ai-search",
+    "search",
+    "anspire"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-tools": "*"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
