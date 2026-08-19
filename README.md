@@ -28,7 +28,7 @@ export ANSPIRE_API_KEY="你的 key"   # 获取: https://open.anspire.cn
 
 ### 插件配置（可选，通过 patch 覆盖）
 
-默认配置（`index.js`）：
+默认配置（`src/tool.js` 内置）：
 
 ```js
 {
@@ -38,11 +38,11 @@ export ANSPIRE_API_KEY="你的 key"   # 获取: https://open.anspire.cn
 }
 ```
 
-在 profile 级 `cordis.patch.yml` 中覆盖（注意 `config` 是整体替换，需重述全部键）：
+在 profile 级 `cordis.patch.yml` 中覆盖（按 id 定位本插件插入的行；`config` 是整体替换，需重述全部键）：
 
 ```yaml
+# profile 的 cordis.patch.yml（~/.dsh/profiles/<name>/cordis.patch.yml）
 - id: anspire-ai-search
-  name: 'anspire-ai-search-dsh-plugin'
   config:
     baseUrl: 'https://plugin.anspire.cn'
     timeoutMs: 20000
@@ -69,9 +69,14 @@ export ANSPIRE_API_KEY="你的 key"   # 获取: https://open.anspire.cn
 
 ```bash
 git clone git@github.com:myg133/anspire-ai-search.git
-cd anspire-ai-search/feature-REQ-001   # 或直接在 bundle 目录
-node --test test/                      # 运行测试（Node ≥18，零依赖）
+cd anspire-ai-search/code        # develop 分支即 bundle 根
+node --test 'test/*.test.js'     # 运行测试（Node ≥18，零依赖）
 ```
+
+### bundle 结构说明
+
+- `cordis.patch.yml` 用 `- insert: [...]` 块向 entry 列表**追加**插件行。不要写成裸 `- id:` 行——那是「覆盖已存在 entry」语义，目标不存在时整条 patch 会被 loader 静默跳过（`patch: entry not found`），插件不加载。
+- `index.js` 不导出 `Config`。cordis loader 要求 `Config["~standard"].validate`（Standard Schema 接口），普通对象会 TypeError。配置直接经 patch 行的 `config` 键流入 `apply(ctx, config)`，未提供时用内置默认值。
 
 ## License
 

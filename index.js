@@ -1,7 +1,12 @@
 // Anspire AI Search — DeepSeek Harness (dsh) 插件入口
 //
-// Cordis 函数插件契约：具名导出 name / inject / Config / apply。
+// Cordis 函数插件契约：具名导出 name / inject / apply。
 // 纯 JavaScript（无构建步骤），零运行时依赖 —— git 安装无需 pnpm allowBuilds 放行。
+//
+// 注意：不导出 Config。Cordis loader 会调用 Config["~standard"].validate()
+// （Standard Schema 接口，需 schemastery/zod 等构造）。普通对象缺少该接口，
+// 插件加载即 TypeError。配置经 patch 行的 config 键流入 apply 的第二参数，
+// 无 Config 导出时不校验、原样透传，默认值在 src/tool.js 内合并。
 
 import { registerAnspireSearchTool } from './src/tool.js'
 
@@ -12,18 +17,12 @@ export const name = 'anspire-ai-search'
 export const inject = ['tools']
 
 /**
- * 部署期配置（可被上层 patch 覆盖；注意 config 是整体替换，覆盖时需重述全部键）
+ * 插件主体：注册 anspire_search 工具
+ * @param {import('@deepseek-ai/cordis').Context} ctx 插件上下文
+ * @param {{baseUrl?: string, timeoutMs?: number, defaultTopK?: number}} [config]
+ *   patch 行配置（可选，缺省用 src/tool.js 内置默认值）
+ * @returns {() => void} unregister disposer
  */
-export const Config = {
-  /** API 基地址 */
-  baseUrl: 'https://plugin.anspire.cn',
-  /** 请求超时（毫秒） */
-  timeoutMs: 30_000,
-  /** 默认返回条数 */
-  defaultTopK: 10,
-}
-
-/** 插件主体：注册 anspire_search 工具（返回 unregister disposer） */
 export function apply(ctx, config) {
   return registerAnspireSearchTool(ctx, config)
 }

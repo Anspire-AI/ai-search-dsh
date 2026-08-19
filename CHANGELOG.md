@@ -10,6 +10,16 @@
 - 初始化仓库：README、.gitignore、CHANGELOG。
 - 建立 Agent Workspace v2 工作区：`code/`（develop）、`BA/`（demand）、`Deploy/`(deploy)。
 
+## [0.1.2] - 2026-08-19
+
+### Fixed
+- 修复 `--dump-config` 报 `patch: entry "anspire-ai-search" not found`、插件不出现在 UI 的问题 (REQ-003)：
+  - `cordis.patch.yml` 改用 `- insert: [...]` 块（顶层追加 entry 语义）。此前的裸 `- id:` 行是「覆盖已存在 entry」语义——目标不存在时整条 patch 被 loader 跳过并告警，bundle 实际贡献 0 个 entry。
+  - `index.js` 移除 `Config` 导出。cordis loader 要求 `Config["~standard"].validate()`（Standard Schema 接口），普通对象缺少该接口，插件一旦加载即 TypeError。配置直接经 patch 行 `config` 键流入 `apply(ctx, config)`，未提供时用内置默认值。
+
+### Added
+- `test/patch.test.js` patch 语法守护测试：断言 insert 块语义，防止回归为裸 id 行。
+
 ## [0.1.1] - 2026-08-19
 
 ### Fixed

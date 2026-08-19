@@ -13,8 +13,19 @@ test('插件入口：纯 JS 可被 Node 直接加载（无 TS 语法/缺失依�
   const plugin = await import('../index.js')
   assert.equal(plugin.name, 'anspire-ai-search')
   assert.deepEqual(plugin.inject, ['tools'])
-  assert.ok(plugin.Config && typeof plugin.Config === 'object')
+  // REQ-003：不导出 Config —— cordis loader 要求 Config["~standard"].validate
+  // （Standard Schema 接口），普通对象会 TypeError。配置直接经 patch 行流入 apply。
+  assert.equal(plugin.Config, undefined)
   assert.equal(typeof plugin.apply, 'function')
+})
+
+test('apply()：对 config 为 undefined 的调用容错（loader 对无 config 行的形态）', async () => {
+  const plugin = await import('../index.js')
+  const registered = []
+  const ctx = { tools: { register: (def) => { registered.push(def); return () => {} } } }
+  plugin.apply(ctx, undefined)
+  assert.equal(registered.length, 1)
+  assert.equal(registered[0].name, 'anspire_search')
 })
 
 test('apply()：向 ctx.tools 注册 anspire_search 工具', async () => {
