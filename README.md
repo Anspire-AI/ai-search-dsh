@@ -31,6 +31,8 @@ dsh plugin --profile <name> add anspire-ai-search-dsh-plugin
 
 **修改即时生效**（live），无需重启 dsh。配置持久化在 dsh 的 `settings.yaml`，由 dsh 统一管理。
 
+> 卡片在「插件配置」tab 中，与终端/agent 循环/网页搜索并列。展开卡片即可编辑，支持「已覆盖」标记与恢复默认。API KEY 为密钥框输入（不回显）。
+
 ### 方式二：环境变量（兜底/CI 场景）
 
 ```bash

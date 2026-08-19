@@ -10,6 +10,15 @@
 - 初始化仓库：README、.gitignore、CHANGELOG。
 - 建立 Agent Workspace v2 工作区：`code/`（develop）、`BA/`（demand）、`Deploy/`(deploy)。
 
+## [0.3.0] - 2026-08-19
+
+### Added
+- 设置页「插件配置」tab 显示本插件的配置卡片 (REQ-005)：
+  - 新增浏览器端 bundle（`client.js`）：package.json 声明 `dsh.client: {platform: 'web'}` + `exports['./client']`，由 dsh-client-modules 扫描并 serve 到 `/plugins/<id>/client.js`。
+  - 卡片注册进 `settings.plugin.item` 槽，与终端/agent 循环/网页搜索并列；staged 编辑 + 统一保存（对齐官方 CardForm 语义：已覆盖标记、恢复默认、非法值阻塞保存、保存失败保留草稿）。
+  - API KEY 输入框为密钥形态（type=password，不回显）。
+  - 客户端依赖（slots/locale/settingsScope）经 `dsh.client.inject` 声明，factory 内 `require()` 由 shell 提供，零打包零构建。
+
 ## [0.2.0] - 2026-08-19
 
 ### Added
