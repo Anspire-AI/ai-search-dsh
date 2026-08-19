@@ -31,9 +31,6 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: code
     steps:
       - uses: actions/checkout@v4
 
@@ -60,9 +57,6 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     environment: npm
-    defaults:
-      run:
-        working-directory: code
     steps:
       - uses: actions/checkout@v4
 
