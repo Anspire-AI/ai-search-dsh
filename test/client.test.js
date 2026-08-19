@@ -33,8 +33,8 @@ function executeBundle() {
     sets: [],
     unsets: [],
     scopeSnapshots: {
-      value: { baseUrl: 'https://plugin.anspire.cn', timeoutMs: 30000, defaultTopK: 10 },
-      base: { baseUrl: 'https://plugin.anspire.cn', timeoutMs: 30000, defaultTopK: 10 },
+      value: { region: 'ai-search-cn', timeoutMs: 30000, defaultTopK: 10 },
+      base: { region: 'ai-search-cn', timeoutMs: 30000, defaultTopK: 10 },
       user: undefined,
       status: 'ready',
       writable: true,
@@ -106,8 +106,8 @@ function executeBundleWithUser(user) {
 }
 
 const SNAPSHOT_TEMPLATE = {
-  value: { baseUrl: 'https://plugin.anspire.cn', timeoutMs: 30000, defaultTopK: 10 },
-  base: { baseUrl: 'https://plugin.anspire.cn', timeoutMs: 30000, defaultTopK: 10 },
+  value: { region: 'ai-search-cn', timeoutMs: 30000, defaultTopK: 10 },
+  base: { region: 'ai-search-cn', timeoutMs: 30000, defaultTopK: 10 },
   user: undefined,
   status: 'ready',
   writable: true,
@@ -202,7 +202,7 @@ test('表单：初始快照（available/writable/非 dirty/字段格式化）', 
   assert.equal(snap.writable, true)
   assert.equal(snap.dirty, false)
   assert.equal(snap.apiKey.text, '', 'apiKey 无默认值')
-  assert.equal(snap.baseUrl.text, 'https://plugin.anspire.cn')
+  assert.equal(snap.region.text, 'ai-search-cn')
   assert.equal(snap.timeoutMs.text, '30000')
   assert.equal(snap.defaultTopK.text, '10')
   assert.equal(snap.apiKey.overridden, false)
@@ -257,19 +257,19 @@ test('表单：resetField 对已有覆盖产生 unset（无覆盖时为 no-op）
   // 场景 A：无 user 覆盖 → reset 不产生写入
   const a = executeBundle()
   const faceA = a.captured.cards[0].item.opts.inject()
-  faceA.resetField('baseUrl')
+  faceA.resetField('region')
   await faceA.save()
   assert.deepEqual(a.captured.unsets, [], '无覆盖时 reset 是 no-op（与官方 CardForm 语义一致）')
 
   // 场景 B：有 user 覆盖 → unset 写入
   // executeBundle 的 scopeSnapshots 是共享引用，注入 user 层再执行
-  const b = executeBundleWithUser({ baseUrl: 'https://override.example.com' })
+  const b = executeBundleWithUser({ region: 'ai-search-global' })
   const faceB = b.captured.cards[0].item.opts.inject()
-  faceB.resetField('baseUrl')
+  faceB.resetField('region')
   const snap = faceB.hooks.anspireCard.getSnapshot()
   assert.equal(snap.dirty, true)
   await faceB.save()
-  assert.deepEqual(b.captured.unsets, ['baseUrl'], '有覆盖时 reset 应 unset')
+  assert.deepEqual(b.captured.unsets, ['region'], '有覆盖时 reset 应 unset')
 })
 
 test('表单：discard 清空 staged', async () => {
@@ -296,7 +296,7 @@ test('REQ-009 守护：hooks 值是 store 形状（getSnapshot/subscribe），�
   // getSnapshot 返回完整投影
   const snap = hook.getSnapshot()
   assert.ok(snap.available !== undefined)
-  assert.ok(snap.apiKey && snap.baseUrl && snap.timeoutMs && snap.defaultTopK)
+  assert.ok(snap.apiKey && snap.region && snap.timeoutMs && snap.defaultTopK)
 
   // subscribe 通知：编辑后监听器被触发
   let notified = 0
@@ -304,4 +304,38 @@ test('REQ-009 守护：hooks 值是 store 形状（getSnapshot/subscribe），�
   face.edit('apiKey', 'x')
   assert.ok(notified > 0, '编辑应触发订阅者')
   off()
+})
+
+test('REQ-010：region 枚举选择 + KEY 申请链接联动', async () => {
+  const { captured } = executeBundle()
+  const face = captured.cards[0].item.opts.inject()
+
+  // 初始：默认国内
+  let snap = face.hooks.anspireCard.getSnapshot()
+  assert.equal(snap.region.text, 'ai-search-cn')
+  assert.equal(snap.region.stagedValue, 'ai-search-cn')
+
+  // 切换到 global（staged，未保存）→ stagedValue 即时变化（链接联动数据源）
+  face.edit('region', 'ai-search-global')
+  snap = face.hooks.anspireCard.getSnapshot()
+  assert.equal(snap.region.text, 'ai-search-global')
+  assert.equal(snap.region.stagedValue, 'ai-search-global')
+  assert.equal(snap.region.overridden, true)
+
+  // 保存 → 写入 region 字段
+  await face.save()
+  assert.deepEqual(captured.sets, [['region', 'ai-search-global']])
+
+  // 非法区域值被拒绝（invalid 阻塞保存）
+  face.edit('region', 'ai-search-unknown')
+  snap = face.hooks.anspireCard.getSnapshot()
+  assert.equal(snap.region.invalid, true, '未知区域应 invalid')
+})
+
+test('REQ-010：文案字典含区域与申请链接文案', () => {
+  const { captured } = executeBundle()
+  const dict = captured.localeDicts.get('settings.plugins.anspire')
+  assert.equal(dict.zh.getKey, '获取 anspire-ai-search api-key')
+  assert.equal(dict.en.getKey, 'Get an anspire-ai-search api-key')
+  assert.ok(dict.zh.region && dict.zh.regionHint)
 })

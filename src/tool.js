@@ -6,12 +6,21 @@
  * 此处手工提供编译后的 JSON Schema 形态，避免对 @deepseek-ai/dsh-tools
  * 的运行时依赖（pnpm 默认不自动安装 peer 依赖，导入即 ERR_MODULE_NOT_FOUND）。
  *
- * 配置来源优先级（REQ-004）：
+ * 配置来源优先级（REQ-004 / REQ-010）：
  *   1. UI 插件设置页（ctx.settings 的 anspire-ai-search 命名空间，live 生效）
  *   2. 环境变量 ANSPIRE_API_KEY / ANPSIRE_API_KEY / DSP_ANSPIRE_KEY（向后兼容）
+ *
+ * 服务端点（REQ-010）：region（ai-search-cn / ai-search-global）优先；
+ * 显式 baseUrl（部署级 patch 覆盖）仅在 region 缺席时回退。
  */
 import { readApiKey, validateParams, search, AnspireApiError } from './api.js'
 import { parseResponse, renderAsText } from './parse.js'
+
+/** 区域 → API 端点映射（与 index.js REGIONS 保持一致；此处独立声明避免循环依赖） */
+const REGION_BASE_URLS = {
+  'ai-search-cn': 'https://plugin.anspire.cn',
+  'ai-search-global': 'https://plugin.anspire.ai',
+}
 
 const DEFAULTS = {
   baseUrl: 'https://plugin.anspire.cn',
@@ -37,6 +46,16 @@ function resolveApiKey(settingsSection) {
   const fromSettings = settingsSection?.apiKey
   if (typeof fromSettings === 'string' && fromSettings.trim()) return fromSettings.trim()
   return readApiKey()
+}
+
+/**
+ * 解析请求基地址：region 优先；显式 baseUrl 仅在 region 缺席时使用。
+ * @param {{region?: string, baseUrl?: string, settingsSection?: object}} config
+ */
+export function resolveBaseUrl(config) {
+  const region = config.settingsSection?.region ?? config.region
+  if (region && REGION_BASE_URLS[region]) return REGION_BASE_URLS[region]
+  return config.baseUrl || DEFAULTS.baseUrl
 }
 
 export function registerAnspireSearchTool(ctx, userConfig = {}) {
@@ -128,7 +147,7 @@ export function registerAnspireSearchTool(ctx, userConfig = {}) {
             regionMode: args.regionMode ?? 0,
           },
           {
-            baseUrl: config.baseUrl,
+            baseUrl: resolveBaseUrl(config),
             apiKey,
             timeoutMs: config.timeoutMs,
             signal: exec?.signal,

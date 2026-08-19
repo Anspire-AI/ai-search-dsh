@@ -24,10 +24,17 @@ dsh plugin --profile <name> add anspire-ai-search-dsh-plugin
 
 | 配置项 | 说明 |
 |--------|------|
-| `apiKey` | Anspire API KEY（获取: https://open.anspire.cn），密钥框输入、自动脱敏 |
-| `baseUrl` | API 基地址，默认 `https://plugin.anspire.cn` |
+| `region` | 服务区域（下拉二选一）：`ai-search-cn`（国内，默认）/ `ai-search-global`（海外） |
+| `apiKey` | Anspire API KEY，密钥框输入、自动脱敏；区域下方提供「获取 anspire-ai-search api-key」链接（随所选区域跳转对应申请地址） |
 | `timeoutMs` | 请求超时（毫秒），默认 30000 |
 | `defaultTopK` | 默认返回条数，默认 10 |
+
+**服务区域**：国内与海外为独立服务，API KEY 不通用。
+
+| 区域 | API 端点 | KEY 申请地址 |
+|------|----------|--------------|
+| `ai-search-cn` | `https://plugin.anspire.cn` | `https://open.anspire.cn/cus/login?service_code=50whsv` |
+| `ai-search-global` | `https://plugin.anspire.ai` | `https://opentoken.anspire.ai/cus/login?service_code=34x2cy` |
 
 **修改即时生效**（live），无需重启 dsh。配置持久化在 dsh 的 `settings.yaml`，由 dsh 统一管理。
 

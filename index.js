@@ -20,12 +20,32 @@ export const inject = ['tools']
 const NS = 'anspire-ai-search'
 
 /**
+ * 服务区域定义：每个区域对应独立的 API 端点与 API KEY 申请地址。
+ * UI 侧展示区域标识（ai-search-cn / ai-search-global），不展示底层 URL；
+ * 请求地址由本映射解析。
+ */
+export const REGIONS = {
+  'ai-search-cn': {
+    baseUrl: 'https://plugin.anspire.cn',
+    keyApplyUrl: 'https://open.anspire.cn/cus/login?service_code=50whsv',
+  },
+  'ai-search-global': {
+    baseUrl: 'https://plugin.anspire.ai',
+    keyApplyUrl: 'https://opentoken.anspire.ai/cus/login?service_code=34x2cy',
+  },
+}
+
+/**
  * 插件配置 schema（schemastery 实例——Settings.resolve 需调用它做校验，
  * UI 表单经 schema.toJSON() 渲染）。
+ *
+ * region 是唯一的服务端点开关（枚举二选一）；baseUrl 保留为部署级
+ * 覆盖项（仅 patch 行使用，UI 不展示），region 未指定时才作为回退。
  */
 export const SettingsSchema = z.object({
-  apiKey: z.string().role('secret').description('Anspire API KEY（获取: https://open.anspire.cn）'),
-  baseUrl: z.string().default('https://plugin.anspire.cn').description('API 基地址'),
+  apiKey: z.string().role('secret').description('Anspire API KEY（在所选区域的申请地址获取）'),
+  region: z.union(['ai-search-cn', 'ai-search-global']).default('ai-search-cn').description('服务区域'),
+  baseUrl: z.string().description('API 基地址（部署级覆盖，UI 不展示；region 优先）'),
   timeoutMs: z
     .number()
     .min(1_000)

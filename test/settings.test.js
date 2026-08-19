@@ -12,7 +12,7 @@ import assert from 'node:assert/strict'
 function makeMockSettingsScope(initialSection, base) {
   let section = initialSection
   const watchers = new Set()
-  const schemaDefaults = { baseUrl: 'https://plugin.anspire.cn', timeoutMs: 30000, defaultTopK: 10 }
+  const schemaDefaults = { region: 'ai-search-cn', timeoutMs: 30000, defaultTopK: 10 }
   return {
     get: () => ({ ...schemaDefaults, ...base, ...section }),
     watch(cb) {
@@ -58,7 +58,7 @@ test('SettingsSchema：可调用、含 secret 角色标记、toJSON 可渲染', 
 
   // 可调用（Settings.resolve 依赖）
   const resolved = SettingsSchema({})
-  assert.equal(resolved.baseUrl, 'https://plugin.anspire.cn')
+  assert.equal(resolved.region, 'ai-search-cn')
   assert.equal(resolved.timeoutMs, 30000)
   assert.equal(resolved.defaultTopK, 10)
 
@@ -79,7 +79,7 @@ test('apply()：向 settings 注册 anspire-ai-search 命名空间（live 生效
   assert.equal(settingsScopes[0].ns, 'anspire-ai-search')
   assert.equal(settingsScopes[0].opts.applies, 'live', 'UI 修改应 live 生效')
   assert.deepEqual(settingsScopes[0].opts.base, {
-    baseUrl: 'https://plugin.anspire.cn',
+    region: 'ai-search-cn',
     timeoutMs: 30000,
     defaultTopK: 10,
   })
@@ -155,4 +155,45 @@ test('apply() 返回的 disposer 清理注入副作用', async () => {
   assert.equal(typeof dispose, 'function')
   // 不抛异常即通过
   dispose()
+})
+
+test('REQ-010：region → baseUrl 端点解析（Host 侧）', async () => {
+  const { resolveBaseUrl } = await import('../src/tool.js')
+
+  // region 优先
+  assert.equal(resolveBaseUrl({ region: 'ai-search-cn' }), 'https://plugin.anspire.cn')
+  assert.equal(resolveBaseUrl({ region: 'ai-search-global' }), 'https://plugin.anspire.ai')
+  // settings 层的 region 同样生效
+  assert.equal(
+    resolveBaseUrl({ settingsSection: { region: 'ai-search-global' } }),
+    'https://plugin.anspire.ai',
+  )
+  // region 缺席时回退显式 baseUrl（部署级 patch 覆盖）
+  assert.equal(
+    resolveBaseUrl({ baseUrl: 'https://private.example.com' }),
+    'https://private.example.com',
+  )
+  // 全部缺席 → 默认国内
+  assert.equal(resolveBaseUrl({}), 'https://plugin.anspire.cn')
+})
+
+test('REQ-010：schema region 枚举与申请地址映射（Host 侧）', async () => {
+  const { SettingsSchema, REGIONS } = await import('../index.js')
+
+  // 枚举默认值
+  assert.equal(SettingsSchema({}).region, 'ai-search-cn')
+  // 非法 region 被 schema 拒绝
+  assert.throws(() => SettingsSchema({ region: 'ai-search-unknown' }), /region|expected/i)
+
+  // 区域映射完整性
+  assert.equal(REGIONS['ai-search-cn'].baseUrl, 'https://plugin.anspire.cn')
+  assert.equal(
+    REGIONS['ai-search-cn'].keyApplyUrl,
+    'https://open.anspire.cn/cus/login?service_code=50whsv',
+  )
+  assert.equal(REGIONS['ai-search-global'].baseUrl, 'https://plugin.anspire.ai')
+  assert.equal(
+    REGIONS['ai-search-global'].keyApplyUrl,
+    'https://opentoken.anspire.ai/cus/login?service_code=34x2cy',
+  )
 })

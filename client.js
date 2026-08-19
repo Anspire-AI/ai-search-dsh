@@ -23,14 +23,31 @@ window.__ModuleLoader__.load({
 		var LOCALE_NS = "settings.plugins.anspire";
 		//#endregion
 
+		//#region 区域定义（与 Host 侧 index.js REGIONS 一致）
+		/** 区域 → { baseUrl（请求端点）, keyApplyUrl（API KEY 申请地址）} */
+		var REGIONS = {
+			"ai-search-cn": {
+				baseUrl: "https://plugin.anspire.cn",
+				keyApplyUrl: "https://open.anspire.cn/cus/login?service_code=50whsv",
+			},
+			"ai-search-global": {
+				baseUrl: "https://plugin.anspire.ai",
+				keyApplyUrl: "https://opentoken.anspire.ai/cus/login?service_code=34x2cy",
+			},
+		};
+		var REGION_KEYS = ["ai-search-cn", "ai-search-global"];
+		var DEFAULT_REGION = "ai-search-cn";
+		//#endregion
+
 		//#region 文案
 		var zh = {
 			title: "Anspire AI 搜索",
 			description: "全网搜索 + 垂域结构化数据（anspire_search 工具）",
 			apiKey: "API KEY",
-			apiKeyHint: "从 https://open.anspire.cn 获取；留空则使用环境变量 ANSPIRE_API_KEY",
-			baseUrl: "API 地址",
-			baseUrlHint: "一般无需修改",
+			apiKeyHint: "留空则使用环境变量 ANSPIRE_API_KEY",
+			region: "服务区域",
+			regionHint: "国内与海外为独立服务，API KEY 不通用",
+			getKey: "获取 anspire-ai-search api-key",
 			timeoutMs: "请求超时（毫秒）",
 			timeoutMsHint: "1000 - 120000",
 			defaultTopK: "默认返回条数",
@@ -51,9 +68,10 @@ window.__ModuleLoader__.load({
 			title: "Anspire AI Search",
 			description: "Web search + vertical structured data (anspire_search tool)",
 			apiKey: "API KEY",
-			apiKeyHint: "Get one at https://open.anspire.cn; empty falls back to ANSPIRE_API_KEY env",
-			baseUrl: "API base URL",
-			baseUrlHint: "Usually no change needed",
+			apiKeyHint: "Empty falls back to the ANSPIRE_API_KEY env var",
+			region: "Service region",
+			regionHint: "CN and Global are separate services; API keys are not interchangeable",
+			getKey: "Get an anspire-ai-search api-key",
 			timeoutMs: "Timeout (ms)",
 			timeoutMsHint: "1000 - 120000",
 			defaultTopK: "Default result count",
@@ -96,6 +114,23 @@ window.__ModuleLoader__.load({
 				parse: function (text) {
 					var trimmed = text.trim();
 					return trimmed === "" ? { kind: "clear" } : { kind: "set", value: trimmed };
+				},
+			};
+		}
+
+		/** 区域枚举字段：只接受 REGIONS 中的键（下拉选择，不可自由输入） */
+		function regionSpec(field) {
+			return {
+				field: field,
+				format: function (value) {
+					return REGION_KEYS.indexOf(value) >= 0 ? value : DEFAULT_REGION;
+				},
+				parse: function (text) {
+					var trimmed = text.trim();
+					if (trimmed === "") return { kind: "clear" };
+					return REGION_KEYS.indexOf(trimmed) >= 0
+						? { kind: "set", value: trimmed }
+						: undefined;
 				},
 			};
 		}
@@ -155,6 +190,7 @@ window.__ModuleLoader__.load({
 					text: spec.format(this.sectionValue(f)),
 					overridden: this.stored(f),
 					invalid: false,
+					stagedValue: this.sectionValue(f),
 				};
 			}
 			var write = staged.clear ? { kind: "clear" } : spec.parse(staged.text);
@@ -162,6 +198,7 @@ window.__ModuleLoader__.load({
 				text: staged.text,
 				overridden: write ? write.kind === "set" : false,
 				invalid: write === undefined,
+				stagedValue: write && write.kind === "set" ? write.value : this.sectionValue(f),
 			};
 		};
 		CardForm.prototype.plan = function () {
@@ -263,6 +300,10 @@ window.__ModuleLoader__.load({
 			".ansp_save:disabled{cursor:default;opacity:.5}",
 			".ansp_pending{color:var(--dsw-alias-label-tertiary);font-size:11px;margin-left:auto}",
 			".ansp_readonly{color:var(--dsw-alias-label-tertiary);font-size:12px;margin:8px 0 0}",
+			".ansp_select{appearance:auto;cursor:pointer}",
+			".ansp_link{font-size:12px;line-height:1.5;color:var(--dsw-alias-brand-primary);text-decoration:none;margin-top:2px;align-self:flex-start}",
+			".ansp_link:hover{text-decoration:underline}",
+			".ansp_link:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px;border-radius:2px}",
 		].join("\n");
 		var cssTag = "anspire-ai-search-dsh-plugin/card.css";
 		if (typeof document !== "undefined" && document.querySelector('style[data-plugin-css="' + cssTag + '"]') === null) {
@@ -303,6 +344,38 @@ window.__ModuleLoader__.load({
 			);
 		}
 
+		/** 区域选择字段：下拉（只可选择，不可输入）+ 下方 KEY 申请链接（随选择联动） */
+		function RegionField(props) {
+			var inputId = react.useId();
+			return react.createElement("div", { className: "ansp_field" },
+				react.createElement("div", { className: "ansp_fieldHead" },
+					react.createElement("label", { className: "ansp_label", htmlFor: inputId }, props.label),
+					props.overridden ? react.createElement("span", { className: "ansp_badge" }, props.overriddenLabel) : null,
+					react.createElement("button", {
+						type: "button", className: "ansp_reset",
+						disabled: props.disabled || !props.overridden,
+						onClick: props.onReset,
+					}, props.resetLabel),
+				),
+				react.createElement("select", {
+					id: inputId,
+					className: "ansp_input ansp_select",
+					value: props.value,
+					disabled: props.disabled,
+					onChange: function (e) { props.onSelect(e.target.value); },
+				}, REGION_KEYS.map(function (key) {
+					return react.createElement("option", { key: key, value: key }, key);
+				})),
+				react.createElement("p", { className: "ansp_hint" }, props.hint),
+				props.keyApplyUrl ? react.createElement("a", {
+					className: "ansp_link",
+					href: props.keyApplyUrl,
+					target: "_blank",
+					rel: "noopener noreferrer",
+				}, props.getKeyLabel) : null,
+			);
+		}
+
 		function AnspireCard(props) {
 			var t = props.t;
 			// hooks.anspireCard 经框架转换为 props.useAnspireCard
@@ -326,6 +399,17 @@ window.__ModuleLoader__.load({
 				),
 				open ? react.createElement("div", { className: "ansp_cardBody" },
 					!state.writable ? react.createElement("p", { className: "ansp_readonly", role: "status" }, t("readOnly")) : null,
+					react.createElement(RegionField, {
+						label: t("region"), hint: t("regionHint"),
+						overriddenLabel: t("overridden"), resetLabel: t("reset"),
+						getKeyLabel: t("getKey"),
+						disabled: disabled,
+						value: state.region.text,
+						overridden: state.region.overridden,
+						keyApplyUrl: (REGIONS[state.region.stagedValue] || REGIONS[DEFAULT_REGION]).keyApplyUrl,
+						onSelect: function (value) { props.edit("region", value); },
+						onReset: function () { props.resetField("region"); },
+					}),
 					react.createElement(Field, {
 						label: t("apiKey"), hint: t("apiKeyHint"), secret: true,
 						overriddenLabel: t("overridden"), resetLabel: t("reset"), invalidLabel: t("invalidNumber"),
@@ -333,14 +417,6 @@ window.__ModuleLoader__.load({
 						text: state.apiKey.text, overridden: state.apiKey.overridden, invalid: state.apiKey.invalid,
 						onEdit: function (text) { props.edit("apiKey", text); },
 						onReset: function () { props.resetField("apiKey"); },
-					}),
-					react.createElement(Field, {
-						label: t("baseUrl"), hint: t("baseUrlHint"),
-						overriddenLabel: t("overridden"), resetLabel: t("reset"), invalidLabel: t("invalidNumber"),
-						disabled: disabled, numeric: false,
-						text: state.baseUrl.text, overridden: state.baseUrl.overridden, invalid: state.baseUrl.invalid,
-						onEdit: function (text) { props.edit("baseUrl", text); },
-						onReset: function () { props.resetField("baseUrl"); },
 					}),
 					react.createElement(Field, {
 						label: t("timeoutMs"), hint: t("timeoutMsHint"),
@@ -376,10 +452,12 @@ window.__ModuleLoader__.load({
 			}, "anspire-card: dictionaries");
 
 			// 表单：绑定 anspire-ai-search 命名空间
+			// region 为枚举选择（regionSpec 只接受 REGIONS 键）；baseUrl 不在 UI 展示
+			// （部署级 patch 覆盖项，Host 侧 resolveBaseUrl 处理优先级）。
 			var scope = ctx.settingsScope.bind({ namespace: NS });
 			var form = new CardForm(scope, [
+				regionSpec("region"),
 				textSpec("apiKey"),
-				textSpec("baseUrl"),
 				numberSpec("timeoutMs", 1000, 120000),
 				numberSpec("defaultTopK", 10, 50, 1),
 			]);
@@ -388,11 +466,14 @@ window.__ModuleLoader__.load({
 			// 框架用 useSyncExternalStoreWithSelector 消费（官方 Controller.bind 同构：
 			// createSnapshotStore(project()) + 变更时 store.set(project())）。
 			var projection = function () {
+				var region = form.field("region");
 				return Object.assign(form.shell(), {
+					region: region,
 					apiKey: form.field("apiKey"),
-					baseUrl: form.field("baseUrl"),
 					timeoutMs: form.field("timeoutMs"),
 					defaultTopK: form.field("defaultTopK"),
+					// 链接联动的当前值：staged 草稿优先（未保存的选择也即时换链接），否则落回 section 值
+					regionLinkValue: region.stagedValue || undefined,
 				});
 			};
 			var snapshot = projection();

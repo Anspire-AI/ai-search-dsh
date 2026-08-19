@@ -10,6 +10,15 @@
 - 初始化仓库：README、.gitignore、CHANGELOG。
 - 建立 Agent Workspace v2 工作区：`code/`（develop）、`BA/`（demand）、`Deploy/`(deploy)。
 
+## [0.4.0] - 2026-08-19
+
+### Added
+- 服务区域选择 (REQ-010)：
+  - 新增 `region` 枚举配置（`ai-search-cn` 国内默认 / `ai-search-global` 海外），UI 下拉选择、不可自由输入；不展示底层 URL。
+  - 区域下方展示「获取 anspire-ai-search api-key」链接，随所选区域跳转对应申请地址（cn → open.anspire.cn，global → opentoken.anspire.ai）；切换区域即时联动（未保存的选择也生效）。
+  - Host 侧 `resolveBaseUrl`：region 优先映射端点；显式 `baseUrl` 降级为部署级 patch 覆盖项（UI 不再展示，region 缺席时回退）。
+  - 提示文案注明：国内与海外为独立服务，API KEY 不通用。
+
 ## [0.3.4] - 2026-08-19
 
 ### Fixed
