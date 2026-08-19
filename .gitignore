@@ -1,0 +1,32 @@
+# ---- 依赖与构建产物 ----
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+dist/
+build/
+out/
+coverage/
+
+# ---- 环境变量（真实配置不入库） ----
+.env
+.env.*
+!.env.example
+
+# ---- IDE ----
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+
+# ---- Agent Workspace worktree 目录（由 git worktree 管理，不纳入版本控制） ----
+/BA/
+/code/
+/Deploy/
+/feature-*/
+/hotfix-*/
