@@ -305,7 +305,8 @@ window.__ModuleLoader__.load({
 
 		function AnspireCard(props) {
 			var t = props.t;
-			var state = props.useCard(function (s) { return s; });
+			// hooks.anspireCard 经框架转换为 props.useAnspireCard
+			var state = props.useAnspireCard(function (s) { return s; });
 			var _a = react.useState(false), open = _a[0], setOpen = _a[1];
 			if (!state.available) return null;
 			var blocked = !state.dirty || state.invalid || state.saving;
@@ -415,6 +416,9 @@ window.__ModuleLoader__.load({
 			// 注册卡片到 settings.plugin.item 槽。
 			// 新版 slots 契约（0.1.0-rc.7+）：keyed slot，options.key = settings 命名空间，
 			// configurable tab 按「Host 服务的命名空间 ∩ 已注册卡片」取交集渲染。
+			//
+			// hooks 键名约定：hooks.anspireCard → 注入组件的 props.useAnspireCard
+			// （框架做 use + 首字母大写 转换，对齐官方 bashCard/useBashCard）。
 			ctx.slots.inject("settings.plugin.item", function* () {
 				yield ctx.slots.register({
 					name: "settings.plugin.item",
@@ -422,7 +426,7 @@ window.__ModuleLoader__.load({
 					locale: LOCALE_NS,
 					inject: function () {
 						return {
-							hooks: { useCard: useCard },
+							hooks: { anspireCard: useCard },
 							edit: function (f, text) { form.stage(f, { text: text, clear: false }); },
 							resetField: function (f) {
 								form.stage(f, { text: form.spec(f).format(form.baseValue(f)), clear: true });

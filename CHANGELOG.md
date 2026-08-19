@@ -10,6 +10,11 @@
 - 初始化仓库：README、.gitignore、CHANGELOG。
 - 建立 Agent Workspace v2 工作区：`code/`（develop）、`BA/`（demand）、`Deploy/`(deploy)。
 
+## [0.3.3] - 2026-08-19
+
+### Fixed
+- 修复卡片展开时报 `props.useCard is not a function` (REQ-008)：slot 框架对 `inject()` 返回的 hooks 键做 `use` + 首字母大写 转换（`hooks.anspireCard` → `props.useAnspireCard`，对齐官方 `bashCard`/`useBashCard` 约定）。原键名 `useCard` 被转换为 `useUseCard`，组件读 `props.useCard` 得 undefined。
+
 ## [0.3.2] - 2026-08-19
 
 ### Fixed
