@@ -1,0 +1,4 @@
+# Anspire AI Search 插件层：挂载工具插件并提供配置行
+# config 整体替换（非深合并），覆盖时需重述全部键
+- id: anspire-ai-search
+  name: 'anspire-ai-search-dsh-plugin'
