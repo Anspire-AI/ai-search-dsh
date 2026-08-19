@@ -220,14 +220,36 @@ window.__ModuleLoader__.load({
 		};
 		CardForm.prototype.clear = function (f) {
 			var self = this;
-			return this.scope.unset(f).then(function () { return !self.stored(f); });
+			return this.scope.unset(f).then(
+				function () {
+					// secret 字段脱敏回读不可靠，未 reject 即成功（同 store 的处理）
+					if (self.SECRET_FIELDS[f]) return true;
+					return !self.stored(f);
+				},
+				function () {
+					return false;
+				},
+			);
 		};
+		/** secret 字段集合（role('secret')）：wire 层脱敏，回读永远无明文 */
+		CardForm.prototype.SECRET_FIELDS = { apiKey: true };
+
 		CardForm.prototype.store = function (f, value) {
 			var self = this;
-			return this.scope.set(f, value).then(function () {
-				var user = self.userLayer();
-				return user !== undefined && user[f] === value;
-			});
+			return this.scope.set(f, value).then(
+				function () {
+					// secret 字段（apiKey）经 redactSecrets 脱敏：user 层回读永远无明文，
+					// 值比对必然 false → 误报「保存失败」（实际已写入）。
+					// 对齐官方 writeKey 语义：写入 promise 未 reject 即视为成功。
+					if (self.SECRET_FIELDS[f]) return true;
+					var user = self.userLayer();
+					return user !== undefined && user[f] === value;
+				},
+				function () {
+					// 写入被拒（校验失败/只读/网络）才是真正的失败
+					return false;
+				},
+			);
 		};
 		CardForm.prototype.stage = function (f, edit) {
 			this.staged.set(f, edit);

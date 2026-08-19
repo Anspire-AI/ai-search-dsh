@@ -10,6 +10,14 @@
 - 初始化仓库：README、.gitignore、CHANGELOG。
 - 建立 Agent Workspace v2 工作区：`code/`（develop）、`BA/`（demand）、`Deploy/`(deploy)。
 
+## [0.4.1] - 2026-08-19
+
+### Fixed
+- 修复保存 API KEY 后误报「保存失败，请重试」（实际已写入）(REQ-011)：
+  - 根因：`role('secret')` 字段经 wire 层 `redactSecrets` 脱敏，`set()` 成功后 user 层回读永远无明文，store() 的「回读值比对」判定必然 false。官方 web-search 卡片写 KEY 用的是 credentials 通道 + 主动重读，不走该比对。
+  - 修正：secret 字段（apiKey）的写入按「promise 未 reject 即成功」判定（对齐官方 `writeKey` 语义）；普通字段保留回读比对。`clear()`（unset）同规则。
+  - set/unset 被 Host 拒绝（校验失败、只读、网络错误）时仍正确报失败。
+
 ## [0.4.0] - 2026-08-19
 
 ### Added

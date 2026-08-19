@@ -339,3 +339,89 @@ test('REQ-010：文案字典含区域与申请链接文案', () => {
   assert.equal(dict.en.getKey, 'Get an anspire-ai-search api-key')
   assert.ok(dict.zh.region && dict.zh.regionHint)
 })
+
+test('REQ-011 守护：secret 字段写入按未拒绝判定，不比对脱敏回读', async () => {
+  // 复刻真实 wire 行为：redactSecrets 剥离 role('secret') 字段 ——
+  // set 成功后 user 层回读 apiKey 仍无明文（旧实现在此误判失败）
+  const { captured } = executeBundleWithSecretRedaction()
+  const face = captured.cards[0].item.opts.inject()
+
+  face.edit('apiKey', 'my-secret-key')
+  await face.save()
+
+  // 写入调用应发生且成功
+  assert.deepEqual(captured.sets, [['apiKey', 'my-secret-key']])
+  const snap = face.hooks.anspireCard.getSnapshot()
+  assert.equal(snap.failed, false, 'secret 写入不应因回读无明文而误报失败')
+  assert.equal(snap.dirty, false, '保存成功后应清空 staged')
+
+  // 写入被拒（set reject）才是失败
+  const b = executeBundleWithSecretRedaction({ rejectSet: true })
+  const faceB = b.captured.cards[0].item.opts.inject()
+  faceB.edit('apiKey', 'k2')
+  await faceB.save()
+  assert.equal(faceB.hooks.anspireCard.getSnapshot().failed, true, 'set 被拒应报失败')
+})
+
+/** 带 secret 脱敏行为的执行变体：user 层回读不含 apiKey 明文（对齐 redactSecrets） */
+function executeBundleWithSecretRedaction(opts = {}) {
+  const captured = {
+    localeDicts: new Map(),
+    cards: [],
+    cssTags: [],
+    sets: [],
+    unsets: [],
+    // 模拟：value 有默认值；user 层写入后不含 secret 明文（wire 已脱敏）
+    scopeSnapshots: {
+      value: { region: 'ai-search-cn', timeoutMs: 30000, defaultTopK: 10 },
+      base: { region: 'ai-search-cn', timeoutMs: 30000, defaultTopK: 10 },
+      user: undefined,
+      status: 'ready',
+      writable: true,
+    },
+  }
+  const factories = new Map()
+  globalThis.window = { __ModuleLoader__: { load: ({ id, factory }) => factories.set(id, factory) } }
+  globalThis.document = {
+    createElement: () => ({ style: {}, dataset: {}, textContent: '' }),
+    head: { appendChild: (el) => captured.cssTags.push(el.dataset.pluginCss) },
+    querySelector: () => null,
+  }
+  const src = readFileSync(join(rootDir, 'client.js'), 'utf8')
+  // eslint-disable-next-line no-new-func
+  new Function(src)()
+  const factory = factories.get('anspire-ai-search-dsh-plugin')
+  const surface = factory((name) => {
+    if (name === 'react') return mockReact
+    throw new Error(`unexpected require: ${name}`)
+  })
+  const ctx = {
+    effect(fn) { fn(); return () => {} },
+    locale: { register: (ns, d) => { captured.localeDicts.set(ns, d); return () => {} } },
+    settingsScope: {
+      bind() {
+        return {
+          // 真实行为：快照 getter 每次重算（user 层脱敏：secret 字段存在但值被剥为标记）
+          getSnapshot: () => captured.scopeSnapshots,
+          subscribe: () => () => {},
+          set: async (f, v) => {
+            if (opts.rejectSet) throw new Error('write refused')
+            captured.sets.push([f, v])
+            // redactSecrets 行为：user 层记录字段存在，但 secret 值不回显
+            captured.scopeSnapshots = {
+              ...captured.scopeSnapshots,
+              user: { ...captured.scopeSnapshots.user, [f]: f === 'apiKey' ? undefined : v },
+            }
+          },
+          unset: async (f) => { captured.unsets.push(f) },
+        }
+      },
+    },
+    slots: {
+      inject(slot, gen) { for (const item of gen()) captured.cards.push({ slot, item }) },
+      register(opts2, comp) { return { opts: opts2, comp } },
+    },
+  }
+  surface.apply(ctx)
+  return { surface, captured }
+}
