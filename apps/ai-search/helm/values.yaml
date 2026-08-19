@@ -1,0 +1,36 @@
+# 公共默认值（嵌套结构）
+# 环境差异变量见 environments/.env.staging / .env.production
+
+replicaCount: 2
+
+image:
+  repository: registry.example.com/anspire/ai-search
+  # tag 由 environments/.env.* 的 IMAGE_TAG 覆盖
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+probes:
+  liveness:
+    path: /healthz
+    initialDelaySeconds: 15
+    periodSeconds: 20
+  readiness:
+    path: /readyz
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+ingress:
+  enabled: false
+  className: nginx
+  host: ai-search.example.com

@@ -1,55 +1,66 @@
-# anspire-ai-search
+# Deploy - 部署配置工作区
 
-AI 搜索服务。
+本目录是 `deploy` 分支的 worktree，由 Deploy Agent / CI 管理。
 
-## 工作区结构（Agent Workspace v2）
+## 核心原则
 
-本仓库基于 Git Worktree 组织多 Agent 协作，根目录即中央仓库（`main` 分支）：
+**Deploy 分支只做「部署配置」，不做「构建」。**
 
 ```
-anspire-ai-search/               # 中央仓库（main 分支）
-├── .git/
-├── BA/                          # [worktree] demand 分支 - 需求管理
-├── code/                        # [worktree] develop 分支 - CI 只读
-├── Deploy/                      # [worktree] deploy 分支 - 部署配置
-├── feature-REQ-xxx/             # [worktree] feature/REQ-xxx 分支 - 开发（按需创建）
-├── hotfix-xxx/                  # [worktree] hotfix/xxx 分支 - 紧急修复（按需创建）
-├── README.md
-├── CHANGELOG.md
-└── .gitignore
+CI 的职责：                    Deploy 的职责：
+代码 checkout → 构建镜像       helm chart → k8s manifests
+→ 打镜像 tag → 推镜像仓库      → 环境配置 → rollout
 ```
 
-## 分支与工作区
+## 目录结构
 
-| 分支 | Worktree | 用途 | 写入者 |
-|------|----------|------|--------|
-| `main` | 根目录 | 生产发布标记 | 仅从 release 合并 |
-| `develop` | `code/` | 主开发分支，CI 构建 | 合并，不直接写 |
-| `demand` | `BA/` | 需求管理 | BA Agent |
-| `deploy` | `Deploy/` | 部署配置 | Deploy Agent / CI |
-| `feature/REQ-xxx` | `feature-REQ-xxx/` | 需求开发 | Dev Agent |
-| `release/vx.y.z` | — | 预发布 | 发布管理员 |
-| `hotfix/xxx` | `hotfix-xxx/` | 紧急修复（基于 main） | Dev Agent |
-
-## 命名规范
-
-- 需求编号：`REQ-{三位数字}`，如 `REQ-001`
-- Commit Message：`[{区域}] {描述} (关联: {需求ID})`
-- 镜像 Tag：默认 `{GIT_SHA}`，发布用 `{GIT_TAG}`
-
-## 常用命令
-
-```bash
-# 创建需求开发 worktree（BA Agent 执行）
-git worktree add feature-REQ-001 feature/REQ-001
-
-# 同步 develop 到本地
-git fetch origin && git rebase origin/develop
-
-# 清理已合并的 worktree
-git worktree remove feature-REQ-001
-git branch -d feature/REQ-001
-git push origin --delete feature/REQ-001
+```
+Deploy/
+├── apps/
+│   └── ai-search/
+│       ├── helm/
+│       │   ├── Chart.yaml
+│       │   ├── templates/
+│       │   ├── values.yaml
+│       │   └── environments/
+│       │       ├── .env.staging
+│       │       └── .env.production
+│       └── deploy.sh
+├── environments/
+│   ├── staging/
+│   └── production/
+├── releases/                    # 发布快照
+├── scripts/
+│   ├── deploy.sh
+│   ├── rollback.sh
+│   └── healthcheck.sh
+└── .deploy/                     # 私有工作目录（不入库）
 ```
 
-详细规范参见各 worktree 内的 README。
+## 镜像 Tag 策略
+
+| 场景 | Tag | 说明 |
+|------|-----|------|
+| 默认 | `{GIT_SHA}` | develop 分支最新 commit SHA |
+| 发布 | `{GIT_TAG}` | 如 v1.0.0 |
+| 特殊 | 用户指定 | 手动覆盖 |
+
+## 部署流程
+
+1. 确认部署目标（环境、应用、镜像 tag）
+2. 更新对应环境的 `.env` 文件中的 `IMAGE_TAG`
+3. `git commit + push` → 触发 CD
+4. 监控 CD 流水线
+5. 执行健康检查
+6. 记录发布
+
+## 回滚流程
+
+回滚本质是一个新的部署操作：
+
+1. 确认要回滚的版本
+2. `git revert` 上一个部署 commit
+3. 调整 `.env` 中的镜像 tag 为旧版本
+4. `git commit + push` → 触发 CD 回滚
+5. 确认回滚成功
+6. 记录回滚原因
