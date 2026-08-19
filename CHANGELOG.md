@@ -10,6 +10,17 @@
 - 初始化仓库：README、.gitignore、CHANGELOG。
 - 建立 Agent Workspace v2 工作区：`code/`（develop）、`BA/`（demand）、`Deploy/`(deploy)。
 
+## [0.3.1] - 2026-08-19
+
+### Fixed
+- 修复页面报错 `keyed slot "settings.plugin.item" requires options.key` (REQ-006)：
+  - 新版 slots（0.1.0-rc.7+）中 `settings.plugin.item` 已从 list slot（`options.id`）改为 keyed slot（`options.key`），且 key 即 settings 命名空间。卡片注册参数由 `id: anspire-ai-search` 改为 `key: anspire-ai-search`。
+  - configurable tab 按「Host 服务的命名空间 ∩ 已注册卡片」交集渲染（本插件 Host 侧已注册同名命名空间，正好闭环）。
+
+### Added
+- `test/slots-contract.test.js`：用真实 `@deepseek-ai/dsh-client-ui-slots` 的 `SlotCore` 跑注册路径（含旧写法被拒的对照断言），防止 mock 契约与真实运行时再次漂移。
+- `@deepseek-ai/dsh-client-ui-slots` 入 dependencies（契约回归测试用）。
+
 ## [0.3.0] - 2026-08-19
 
 ### Added

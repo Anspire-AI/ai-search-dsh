@@ -412,12 +412,13 @@ window.__ModuleLoader__.load({
 				);
 			};
 
-			// 注册卡片到 settings.plugin.item 槽（configurable tab 逐卡片渲染）
+			// 注册卡片到 settings.plugin.item 槽。
+			// 新版 slots 契约（0.1.0-rc.7+）：keyed slot，options.key = settings 命名空间，
+			// configurable tab 按「Host 服务的命名空间 ∩ 已注册卡片」取交集渲染。
 			ctx.slots.inject("settings.plugin.item", function* () {
 				yield ctx.slots.register({
 					name: "settings.plugin.item",
-					id: "anspire-ai-search",
-					order: 30,
+					key: NS,
 					locale: LOCALE_NS,
 					inject: function () {
 						return {

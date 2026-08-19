@@ -177,12 +177,14 @@ test('apply()：注册 zh/en 文案字典', () => {
   }
 })
 
-test('apply()：向 settings.plugin.item 槽注册 anspire-ai-search 卡片', () => {
+test('apply()：向 settings.plugin.item 槽注册卡片（keyed by 命名空间）', () => {
   const { captured } = executeBundle()
   assert.equal(captured.cards.length, 1)
   const { slot, item } = captured.cards[0]
   assert.equal(slot, 'settings.plugin.item')
-  assert.equal(item.opts.id, 'anspire-ai-search')
+  // 新版 slots 契约：keyed slot，options.key = settings 命名空间（REQ-006）
+  assert.equal(item.opts.key, 'anspire-ai-search', 'key 应为 settings 命名空间')
+  assert.equal(item.opts.id, undefined, 'keyed slot 不用 id（旧版字段）')
   assert.equal(item.opts.locale, 'settings.plugins.anspire')
   assert.equal(typeof item.comp, 'function')
 })
