@@ -384,8 +384,9 @@ window.__ModuleLoader__.load({
 				numberSpec("defaultTopK", 10, 50, 1),
 			]);
 
-			// snapshot store（useSyncExternalStore 兼容）
-			var listeners = new Set();
+			// snapshot store：hooks 值必须是 store 形状（getSnapshot/subscribe），
+			// 框架用 useSyncExternalStoreWithSelector 消费（官方 Controller.bind 同构：
+			// createSnapshotStore(project()) + 变更时 store.set(project())）。
 			var projection = function () {
 				return Object.assign(form.shell(), {
 					apiKey: form.field("apiKey"),
@@ -395,23 +396,21 @@ window.__ModuleLoader__.load({
 				});
 			};
 			var snapshot = projection();
+			var storeListeners = new Set();
+			var store = {
+				getSnapshot: function () { return snapshot; },
+				subscribe: function (fn) {
+					storeListeners.add(fn);
+					return function () { storeListeners.delete(fn); };
+				},
+			};
 			var publish = function () {
-				snapshot = projection();
-				listeners.forEach(function (l) { l(); });
+				var next = projection();
+				if (next === snapshot) return;
+				snapshot = next;
+				storeListeners.forEach(function (l) { l(); });
 			};
 			form.listeners.add(publish);
-
-			var useCard = function (selector) {
-				var sel = selector || function (s) { return s; };
-				return react.useSyncExternalStore(
-					function (onStoreChange) {
-						listeners.add(onStoreChange);
-						return function () { listeners.delete(onStoreChange); };
-					},
-					function () { return sel(snapshot); },
-					function () { return sel(snapshot); },
-				);
-			};
 
 			// 注册卡片到 settings.plugin.item 槽。
 			// 新版 slots 契约（0.1.0-rc.7+）：keyed slot，options.key = settings 命名空间，
@@ -426,7 +425,7 @@ window.__ModuleLoader__.load({
 					locale: LOCALE_NS,
 					inject: function () {
 						return {
-							hooks: { anspireCard: useCard },
+							hooks: { anspireCard: store },
 							edit: function (f, text) { form.stage(f, { text: text, clear: false }); },
 							resetField: function (f) {
 								form.stage(f, { text: form.spec(f).format(form.baseValue(f)), clear: true });

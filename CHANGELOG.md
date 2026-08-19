@@ -10,6 +10,11 @@
 - 初始化仓库：README、.gitignore、CHANGELOG。
 - 建立 Agent Workspace v2 工作区：`code/`（develop）、`BA/`（demand）、`Deploy/`(deploy)。
 
+## [0.3.4] - 2026-08-19
+
+### Fixed
+- 修复卡片渲染时报 `getSnapshot is not a function` (REQ-009)：hooks 值必须是 **store 对象**（`{getSnapshot, subscribe}`，官方经 `createSnapshotStore` 构造），框架用 `useSyncExternalStoreWithSelector` 消费并注入 `props.useAnspireCard(selector)`。原实现传的是自定义 selector 函数，框架对其调 `.getSnapshot()` 即抛错，卡片渲染崩溃、表单不显示。
+
 ## [0.3.3] - 2026-08-19
 
 ### Fixed

@@ -197,7 +197,7 @@ test('inject()：声明 slots/locale/settingsScope 客户端依赖', () => {
 test('表单：初始快照（available/writable/非 dirty/字段格式化）', () => {
   const { captured } = executeBundle()
   const face = captured.cards[0].item.opts.inject()
-  const snap = face.hooks.anspireCard((s) => s)
+  const snap = face.hooks.anspireCard.getSnapshot()
   assert.equal(snap.available, true)
   assert.equal(snap.writable, true)
   assert.equal(snap.dirty, false)
@@ -213,7 +213,7 @@ test('表单：staged 编辑 → dirty/overridden；save 逐字段写入', async
   const face = captured.cards[0].item.opts.inject()
 
   face.edit('apiKey', 'new-key-123')
-  let snap = face.hooks.anspireCard((s) => s)
+  let snap = face.hooks.anspireCard.getSnapshot()
   assert.equal(snap.dirty, true)
   assert.equal(snap.apiKey.text, 'new-key-123')
   assert.equal(snap.apiKey.overridden, true)
@@ -235,7 +235,7 @@ test('表单：非法数字阻塞 save（invalid 拒绝写入）', async () => {
   const face = captured.cards[0].item.opts.inject()
 
   face.edit('timeoutMs', 'abc')
-  let snap = face.hooks.anspireCard((s) => s)
+  let snap = face.hooks.anspireCard.getSnapshot()
   assert.equal(snap.invalid, true)
   assert.equal(snap.timeoutMs.invalid, true)
 
@@ -245,11 +245,11 @@ test('表单：非法数字阻塞 save（invalid 拒绝写入）', async () => {
   // 超范围同样阻塞（defaultTopK 合法区间 10-50）
   face.discard()
   face.edit('defaultTopK', '55')
-  snap = face.hooks.anspireCard((s) => s)
+  snap = face.hooks.anspireCard.getSnapshot()
   assert.equal(snap.defaultTopK.invalid, true, '55 超出 max=50')
   // timeoutMs 低于 min=1000
   face.edit('timeoutMs', '100')
-  snap = face.hooks.anspireCard((s) => s)
+  snap = face.hooks.anspireCard.getSnapshot()
   assert.equal(snap.timeoutMs.invalid, true, '100 低于 min=1000')
 })
 
@@ -266,7 +266,7 @@ test('表单：resetField 对已有覆盖产生 unset（无覆盖时为 no-op）
   const b = executeBundleWithUser({ baseUrl: 'https://override.example.com' })
   const faceB = b.captured.cards[0].item.opts.inject()
   faceB.resetField('baseUrl')
-  const snap = faceB.hooks.anspireCard((s) => s)
+  const snap = faceB.hooks.anspireCard.getSnapshot()
   assert.equal(snap.dirty, true)
   await faceB.save()
   assert.deepEqual(b.captured.unsets, ['baseUrl'], '有覆盖时 reset 应 unset')
@@ -277,8 +277,31 @@ test('表单：discard 清空 staged', async () => {
   const face = captured.cards[0].item.opts.inject()
   face.edit('apiKey', 'x')
   face.discard()
-  const snap = face.hooks.anspireCard((s) => s)
+  const snap = face.hooks.anspireCard.getSnapshot()
   assert.equal(snap.dirty, false)
   await face.save()
   assert.deepEqual(captured.sets, [])
+})
+
+test('REQ-009 守护：hooks 值是 store 形状（getSnapshot/subscribe），非函数', () => {
+  const { captured } = executeBundle()
+  const face = captured.cards[0].item.opts.inject()
+  const hook = face.hooks.anspireCard
+
+  assert.equal(typeof hook, 'object', 'hooks 值应为 store 对象')
+  assert.equal(typeof hook.getSnapshot, 'function', 'store 应有 getSnapshot')
+  assert.equal(typeof hook.subscribe, 'function', 'store 应有 subscribe')
+  assert.notEqual(typeof hook, 'function', '不能是 selector 函数（v0.3.3 的故障形态）')
+
+  // getSnapshot 返回完整投影
+  const snap = hook.getSnapshot()
+  assert.ok(snap.available !== undefined)
+  assert.ok(snap.apiKey && snap.baseUrl && snap.timeoutMs && snap.defaultTopK)
+
+  // subscribe 通知：编辑后监听器被触发
+  let notified = 0
+  const off = hook.subscribe(() => { notified++ })
+  face.edit('apiKey', 'x')
+  assert.ok(notified > 0, '编辑应触发订阅者')
+  off()
 })
