@@ -6,15 +6,25 @@
 
 ## 安装
 
-```bash
-# 从 GitHub 安装（推荐固定 commit）
-dsh plugin --profile <name> add github:myg133/anspire-ai-search#<sha>
+两种方式任选其一：
 
-# 或从 npm（发布后）
+**方式一：npm（推荐，版本即发布 tag）**
+
+```bash
 dsh plugin --profile <name> add @anspire-ai/ai-search-dsh-plugin
 ```
 
-> 本插件为纯 JavaScript（无构建步骤），通过 GitHub 安装无需在 `pnpm-workspace.yaml` 中放行构建。
+**方式二：GitHub（固定 commit，获取未发布的改动）**
+
+```bash
+dsh plugin --profile <name> add github:myg133/anspire-ai-search#develop
+# 或固定到具体提交：github:myg133/anspire-ai-search#<sha>
+```
+
+> 两种方式的插件功能完全一致；npm 方式随 `v*` tag 自动发布，GitHub 方式可吃到 develop 分支的最新改动。
+> 本插件为纯 JavaScript（无构建步骤），GitHub 安装无需在 `pnpm-workspace.yaml` 中放行构建。
+
+**从旧包名升级**（曾以 `anspire-ai-search-dsh-plugin` 无 scope 名义安装过）：先 `dsh plugin --profile <name> remove anspire-ai-search-dsh-plugin` 再按上述方式安装；已保存的配置（settings.yaml）不受影响。
 
 ## 配置
 

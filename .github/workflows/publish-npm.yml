@@ -66,6 +66,13 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           scope: '@anspire-ai'
 
+      # OIDC trusted publishing 要求 npm ≥ 11.5.1；runner 自带版本可能过旧，
+      # 旧版会静默跳过 OIDC 直接 401/404
+      - name: 升级 npm 至最新
+        run: |
+          npm install -g npm@latest
+          npm --version
+
       - name: 安装依赖
         run: npm install --no-fund --no-audit
 

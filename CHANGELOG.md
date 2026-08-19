@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Fixed
+- `repository.url` 改为 OIDC 要求的格式（无 `git+` 前缀、无 `.git` 后缀），修复 trusted publishing 422。
+- CI 发布前升级 npm 至最新（OIDC 要求 ≥11.5.1，runner 自带版本可能过旧，旧版静默跳过 OIDC）。
+
 ### Changed
 - 包更名为 `@anspire-ai/ai-search-dsh-plugin`（npm org scope），联动更新 cordis.patch.yml 的 entry name、client.js 模块 id、测试与 README (REQ-014)。
 - GitHub 安装后插件 id 随包名变化：已装旧版（anspire-ai-search-dsh-plugin）的用户需 `dsh plugin remove` 后重装；settings.yaml 中的配置按命名空间（anspire-ai-search）保留，不受影响。
