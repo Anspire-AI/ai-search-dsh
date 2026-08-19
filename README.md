@@ -1,55 +1,55 @@
-# anspire-ai-search
+# BA - 需求管理工作区
 
-AI 搜索服务。
+本目录是 `demand` 分支的 worktree，由 BA Agent 负责需求管理、迭代管理、调度管理和 worktree 生命周期管理。
 
-## 工作区结构（Agent Workspace v2）
-
-本仓库基于 Git Worktree 组织多 Agent 协作，根目录即中央仓库（`main` 分支）：
+## 目录结构
 
 ```
-anspire-ai-search/               # 中央仓库（main 分支）
-├── .git/
-├── BA/                          # [worktree] demand 分支 - 需求管理
-├── code/                        # [worktree] develop 分支 - CI 只读
-├── Deploy/                      # [worktree] deploy 分支 - 部署配置
-├── feature-REQ-xxx/             # [worktree] feature/REQ-xxx 分支 - 开发（按需创建）
-├── hotfix-xxx/                  # [worktree] hotfix/xxx 分支 - 紧急修复（按需创建）
+BA/
 ├── README.md
-├── CHANGELOG.md
-└── .gitignore
+├── demands/                      # 需求文档
+│   ├── REQ-001-xxx/
+│   │   ├── demand.md             # 需求描述
+│   │   ├── acceptance.md         # 验收标准
+│   │   ├── design-summary.md     # 设计概要
+│   │   ├── status.md             # 当前状态
+│   │   └── test-cases/           # 测试用例（QA 创建）
+│   └── _template/                # 需求模板
+├── backlog/
+│   ├── inbox/                    # 未梳理的原始想法
+│   └── refined/                  # 已梳理待排期
+├── sprint/
+│   ├── current.md                # 当前迭代计划
+│   └── retrospective.md          # 复盘
+├── decisions/                    # 架构决策记录 (ADR)
+├── dispatch/
+│   ├── rules.md                  # 调度规则
+│   ├── registry.md               # Agent 注册表
+│   ├── verification-queue.md     # 待验证队列
+│   └── cleanup-log.md            # worktree 回收日志
+└── .ba/                          # BA 私有工作目录（不入库）
 ```
 
-## 分支与工作区
+## 需求状态流转
 
-| 分支 | Worktree | 用途 | 写入者 |
-|------|----------|------|--------|
-| `main` | 根目录 | 生产发布标记 | 仅从 release 合并 |
-| `develop` | `code/` | 主开发分支，CI 构建 | 合并，不直接写 |
-| `demand` | `BA/` | 需求管理 | BA Agent |
-| `deploy` | `Deploy/` | 部署配置 | Deploy Agent / CI |
-| `feature/REQ-xxx` | `feature-REQ-xxx/` | 需求开发 | Dev Agent |
-| `release/vx.y.z` | — | 预发布 | 发布管理员 |
-| `hotfix/xxx` | `hotfix-xxx/` | 紧急修复（基于 main） | Dev Agent |
-
-## 命名规范
-
-- 需求编号：`REQ-{三位数字}`，如 `REQ-001`
-- Commit Message：`[{区域}] {描述} (关联: {需求ID})`
-- 镜像 Tag：默认 `{GIT_SHA}`，发布用 `{GIT_TAG}`
-
-## 常用命令
-
-```bash
-# 创建需求开发 worktree（BA Agent 执行）
-git worktree add feature-REQ-001 feature/REQ-001
-
-# 同步 develop 到本地
-git fetch origin && git rebase origin/develop
-
-# 清理已合并的 worktree
-git worktree remove feature-REQ-001
-git branch -d feature/REQ-001
-git push origin --delete feature/REQ-001
+```
+草稿 → 已评审 → 已就绪 → 进行中 → 待验证 → 已验证 → 已完成
+                            ↓                ↓
+                         已取消         已退回 → 进行中
 ```
 
-详细规范参见各 worktree 内的 README。
+## 分配需求流程
+
+1. 确认需求状态为「已就绪」
+2. 从 `dispatch/rules.md` 查找可用 Dev Agent
+3. 创建 feature worktree：`git worktree add feature-REQ-xxx feature/REQ-xxx`
+4. 在 `.feature/manifest.json` 中记录分配信息
+5. 更新需求状态为「进行中」
+6. 创建 QA 子 agent 生成测试用例 → 创建 Dev 子 agent 开发
+
+## 工作区规则
+
+- 所有变更通过 Git 持久化（commit 到 `demand` 分支）
+- 需求文档按 `REQ-{三位数字}` 编号，目录名 `REQ-001-{slug}`
+- Dev Agent 在 `feature-REQ-xxx/` 开发，PR 合并目标为 `develop`
+- 每次启动时执行 worktree 巡检（见 `dispatch/cleanup-log.md`）
