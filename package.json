@@ -1,6 +1,6 @@
 {
   "name": "anspire-ai-search-dsh-plugin",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Anspire AI Search plugin for DeepSeek Harness (dsh) — 全网搜索 + 垂域结构化数据",
   "type": "module",
   "main": "index.js",
@@ -28,8 +28,10 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@deepseek-ai/dsh-client-ui-slots": "^0.1.0-rc.7",
     "@deepseek-ai/schemastery": "^3.18.1"
+  },
+  "devDependencies": {
+    "@deepseek-ai/dsh-client-ui-slots": "^0.1.0-rc.7"
   },
   "dsh": {
     "bundle": {
@@ -40,7 +42,7 @@
       "inject": [
         "@deepseek-ai/dsh-client-ui-slots",
         "@deepseek-ai/dsh-client-locale",
-        "@deepseek-ai/dsh-client-settings-scope"
+        "@deepseek-ai/dsh-client-ui-settings"
       ]
     }
   }

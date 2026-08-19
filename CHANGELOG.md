@@ -10,6 +10,12 @@
 - 初始化仓库：README、.gitignore、CHANGELOG。
 - 建立 Agent Workspace v2 工作区：`code/`（develop）、`BA/`（demand）、`Deploy/`(deploy)。
 
+## [0.3.2] - 2026-08-19
+
+### Fixed
+- `dsh.client.inject` 修正 (REQ-007)：原第三个包名 `@deepseek-ai/dsh-client-settings-scope` 不存在（npm 404，编辑时的笔误），坏边导致浏览器端 entry 激活永远等待。改为真实包 `@deepseek-ai/dsh-client-ui-settings`（设置壳，提供 settingsScope 服务）。
+- `@deepseek-ai/dsh-client-ui-slots` 从 dependencies 移到 devDependencies：仅契约回归测试使用，运行时 client.js 只 `require('react')`。消除安装时的 missing peer 警告（cordis/dsh-invariants）。
+
 ## [0.3.1] - 2026-08-19
 
 ### Fixed
