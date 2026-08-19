@@ -1,4 +1,4 @@
-# anspire-ai-search-dsh-plugin
+# @anspire-ai/ai-search-dsh-plugin
 
 [Anspire AI Search](https://open.anspire.cn) 的 [DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) 插件。
 
@@ -11,7 +11,7 @@
 dsh plugin --profile <name> add github:myg133/anspire-ai-search#<sha>
 
 # 或从 npm（发布后）
-dsh plugin --profile <name> add anspire-ai-search-dsh-plugin
+dsh plugin --profile <name> add @anspire-ai/ai-search-dsh-plugin
 ```
 
 > 本插件为纯 JavaScript（无构建步骤），通过 GitHub 安装无需在 `pnpm-workspace.yaml` 中放行构建。
@@ -96,6 +96,16 @@ git clone git@github.com:myg133/anspire-ai-search.git
 cd anspire-ai-search/code        # develop 分支即 bundle 根
 node --test 'test/*.test.js'     # 运行测试（Node ≥18，零依赖）
 ```
+
+### 发布（npm）
+
+打 tag 自动发布（CI：测试 → 版本同步自 tag → pack 冒烟 → OIDC 发布）：
+
+```bash
+git tag v0.5.0 && git push origin v0.5.0
+```
+
+前置（一次性）：npm org `@anspire-ai` 的 Trusted Publisher 已配置指向本仓库的 `publish-npm.yml`。
 
 ### bundle 结构说明
 

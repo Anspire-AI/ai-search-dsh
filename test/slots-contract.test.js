@@ -35,7 +35,7 @@ function materializeBundle() {
   const src = readFileSync(join(rootDir, 'client.js'), 'utf8')
   // eslint-disable-next-line no-new-func
   new Function(src)()
-  const factory = factories.get('anspire-ai-search-dsh-plugin')
+  const factory = factories.get('@anspire-ai/ai-search-dsh-plugin')
   assert.ok(factory, 'bundle 应注册 factory')
   return factory((name) => {
     if (name === 'react') return mockReact

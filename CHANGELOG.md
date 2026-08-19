@@ -6,6 +6,13 @@
 
 ## [Unreleased]
 
+### Changed
+- 包更名为 `@anspire-ai/ai-search-dsh-plugin`（npm org scope），联动更新 cordis.patch.yml 的 entry name、client.js 模块 id、测试与 README (REQ-014)。
+- GitHub 安装后插件 id 随包名变化：已装旧版（anspire-ai-search-dsh-plugin）的用户需 `dsh plugin remove` 后重装；settings.yaml 中的配置按命名空间（anspire-ai-search）保留，不受影响。
+
+### Added
+- npm 自动发布 workflow（`.github/workflows/publish-npm.yml`）(REQ-014)：tag `v*` 触发 → 测试 → 版本号同步自 tag → `npm pack` 冒烟 → OIDC trusted publishing 发布 `@anspire-ai/ai-search-dsh-plugin`。支持 `workflow_dispatch` 手动跑测试不发布。
+
 ### Added
 - 初始化仓库：README、.gitignore、CHANGELOG。
 - 建立 Agent Workspace v2 工作区：`code/`（develop）、`BA/`（demand）、`Deploy/`(deploy)。

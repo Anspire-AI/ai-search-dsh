@@ -56,8 +56,8 @@ function executeBundle() {
   new Function(src)()
 
   // 物化 factory
-  const factory = factories.get('anspire-ai-search-dsh-plugin')
-  assert.ok(factory, 'bundle 应注册 anspire-ai-search-dsh-plugin')
+  const factory = factories.get('@anspire-ai/ai-search-dsh-plugin')
+  assert.ok(factory, 'bundle 应注册 @anspire-ai/ai-search-dsh-plugin')
 
   const surface = factory((name) => {
     if (name === 'react') return mockReact
@@ -133,7 +133,7 @@ function executeBundleWithOverride(snapshotOverride) {
   const src = readFileSync(join(rootDir, 'client.js'), 'utf8')
   // eslint-disable-next-line no-new-func
   new Function(src)()
-  const factory = factories.get('anspire-ai-search-dsh-plugin')
+  const factory = factories.get('@anspire-ai/ai-search-dsh-plugin')
   const surface = factory((name) => {
     if (name === 'react') return mockReact
     throw new Error(`unexpected require: ${name}`)
@@ -162,7 +162,7 @@ function executeBundleWithOverride(snapshotOverride) {
 
 test('bundle：__ModuleLoader__ 注册 + factory 物化 + CSS 注入', () => {
   const { captured } = executeBundle()
-  assert.ok(captured.cssTags.includes('anspire-ai-search-dsh-plugin/card.css'), '应注入卡片样式')
+  assert.ok(captured.cssTags.includes('@anspire-ai/ai-search-dsh-plugin/card.css'), '应注入卡片样式')
 })
 
 test('apply()：注册 zh/en 文案字典', () => {
@@ -390,7 +390,7 @@ function executeBundleWithSecretRedaction(opts = {}) {
   const src = readFileSync(join(rootDir, 'client.js'), 'utf8')
   // eslint-disable-next-line no-new-func
   new Function(src)()
-  const factory = factories.get('anspire-ai-search-dsh-plugin')
+  const factory = factories.get('@anspire-ai/ai-search-dsh-plugin')
   const surface = factory((name) => {
     if (name === 'react') return mockReact
     throw new Error(`unexpected require: ${name}`)

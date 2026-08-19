@@ -1,0 +1,102 @@
+# npm 自动发布：tag v* 触发
+#
+# 流程：测试 → 版本号同步自 tag → npm pack 冒烟 → OIDC trusted publishing 发布
+#
+# 前置条件（一次性）：
+#   1. npm org 已建好：@anspire-ai（已完成）
+#   2. npm 侧配置 trusted publishing：
+#      npmjs.com → org Settings → Trusted Publisher → Add publisher
+#        repository: myg133/anspire-ai-search
+#        workflow:   publish-npm.yml
+#        environment:（留空或配置 GitHub Environment）
+#   3. GitHub 仓库 Settings → Actions → General → Workflow permissions
+#      选 "Read and write permissions"（本 workflow 已用 permissions 块最小化收敛，无需全局放开）
+#
+# 版本规则：tag 即版本（v1.0.0 → 1.0.0）。发布前 CI 会把 package.json 的
+# version 改写为 tag 版本（本地 package.json 版本号仅作占位，不用于发布）。
+
+name: publish-npm
+
+on:
+  push:
+    tags: ['v*']
+  # 手动触发（仅跑测试+pack 冒烟，不发布；用于验证 workflow 本身）
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: code
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 安装依赖（含 devDependencies）
+        run: npm install --no-fund --no-audit
+
+      - name: 语法检查（入口与客户端 bundle）
+        run: |
+          node --check index.js
+          node --check client.js
+          node --check src/*.js
+
+      - name: 单元测试
+        run: node --test 'test/*.test.js'
+
+  publish:
+    name: publish to npm
+    needs: test
+    # 仅 tag 触发时发布；workflow_dispatch 只跑到 test 为止
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: npm
+    defaults:
+      run:
+        working-directory: code
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+          scope: '@anspire-ai'
+
+      - name: 安装依赖
+        run: npm install --no-fund --no-audit
+
+      - name: 版本号同步自 tag
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          # 校验 tag 是合法 semver
+          node -e "
+            const v = process.argv[1]
+            if (!/^\d+\.\d+\.\d+(-[\w.]+)?$/.test(v)) {
+              console.error('tag 不是合法 semver（期望 vX.Y.Z 格式）: ' + v)
+              process.exit(1)
+            }
+          " "$TAG"
+          npm version "$TAG" --no-git-tag-version --allow-same-version
+          echo "发布版本: $TAG"
+
+      - name: npm pack 冒烟（检查包内容完整性）
+        run: |
+          npm pack --dry-run 2>&1 | tee pack.log
+          # 核心文件必须在包内
+          for f in index.js client.js cordis.patch.yml; do
+            grep -q " $f$" pack.log || { echo "包内缺少 $f"; exit 1; }
+          done
+          echo "--- 包内容检查通过 ---"
+
+      - name: 发布（OIDC trusted publishing）
+        run: npm publish --access public

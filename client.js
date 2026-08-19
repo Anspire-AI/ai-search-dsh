@@ -9,7 +9,7 @@
 // 通过 ctx.settingsScope.bind({namespace}) 读写 anspire-ai-search 命名空间。
 
 window.__ModuleLoader__.load({
-	id: "anspire-ai-search-dsh-plugin",
+	id: "@anspire-ai/ai-search-dsh-plugin",
 	factory: (require) => {
 		var module = { exports: {} };
 		var exports = module.exports;
@@ -327,10 +327,10 @@ window.__ModuleLoader__.load({
 			".ansp_link:hover{text-decoration:underline}",
 			".ansp_link:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px;border-radius:2px}",
 		].join("\n");
-		var cssTag = "anspire-ai-search-dsh-plugin/card.css";
+		var cssTag = "@anspire-ai/ai-search-dsh-plugin/card.css";
 		if (typeof document !== "undefined" && document.querySelector('style[data-plugin-css="' + cssTag + '"]') === null) {
 			var styleTag = document.createElement("style");
-			styleTag.dataset.plugin = "anspire-ai-search-dsh-plugin";
+			styleTag.dataset.plugin = "@anspire-ai/ai-search-dsh-plugin";
 			styleTag.dataset.pluginCss = cssTag;
 			styleTag.textContent = cardCss;
 			document.head.appendChild(styleTag);

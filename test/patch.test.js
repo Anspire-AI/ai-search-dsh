@@ -58,7 +58,7 @@ test('insert 块内包含 id + name 的插件行', () => {
   assert.ok(idMatch, 'insert 块内应有 - id: 行')
   assert.ok(nameMatch, 'insert 块内应有 name: 行')
   assert.equal(idMatch[1], 'anspire-ai-search')
-  assert.equal(nameMatch[1].trim(), 'anspire-ai-search-dsh-plugin')
+  assert.equal(nameMatch[1].trim(), '@anspire-ai/ai-search-dsh-plugin')
 })
 
 test('insert 语义模拟：entry 成功进入合成列表（复刻 loader 核心，对照旧写法 not found）', () => {
@@ -78,5 +78,5 @@ test('insert 语义模拟：entry 成功进入合成列表（复刻 loader 核�
 
   assert.deepEqual(warns, [])
   assert.ok(entryMap.has('anspire-ai-search'), 'anspire-ai-search entry 应存在')
-  assert.equal(entryMap.get('anspire-ai-search').name, 'anspire-ai-search-dsh-plugin')
+  assert.equal(entryMap.get('anspire-ai-search').name, '@anspire-ai/ai-search-dsh-plugin')
 })

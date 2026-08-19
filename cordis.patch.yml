@@ -8,4 +8,4 @@
 # profile 级覆盖配置的示例见 README（按 id 定位本插件插入的行）
 - insert:
     - id: anspire-ai-search
-      name: 'anspire-ai-search-dsh-plugin'
+      name: '@anspire-ai/ai-search-dsh-plugin'
