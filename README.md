@@ -15,8 +15,8 @@ dsh plugin --profile <name> add @anspire-ai/ai-search-dsh-plugin
 **方式二：GitHub（固定 commit，获取未发布的改动）**
 
 ```bash
-dsh plugin --profile <name> add github:myg133/anspire-ai-search#develop
-# 或固定到具体提交：github:myg133/anspire-ai-search#<sha>
+dsh plugin --profile <name> add github:Anspire-AI/ai-search-dsh#develop
+# 或固定到具体提交：github:Anspire-AI/ai-search-dsh#<sha>
 ```
 
 > 两种方式的插件功能完全一致；npm 方式随 `v*` tag 自动发布，GitHub 方式可吃到 develop 分支的最新改动。
@@ -95,7 +95,7 @@ export ANSPIRE_API_KEY="你的 key"   # 申请入口见插件设置页链接
 ## 开发
 
 ```bash
-git clone git@github.com:myg133/anspire-ai-search.git
+git clone git@github.com:Anspire-AI/ai-search-dsh.git
 cd anspire-ai-search/code        # develop 分支即 bundle 根
 node --test 'test/*.test.js'     # 运行测试（Node ≥18，零依赖）
 ```

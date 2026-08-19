@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/myg133/anspire-ai-search"
+    "url": "https://github.com/Anspire-AI/ai-search-dsh"
   },
   "files": [
     "index.js",
