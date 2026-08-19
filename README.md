@@ -1,10 +1,8 @@
 # @anspire-ai/ai-search-dsh-plugin
 
-[Anspire AI Search](https://open.anspire.cn) 的 [DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) 插件。
+Anspire AI Search 的 [DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) 插件。
 
-为 agent 提供全网搜索能力：网页 / 图片 / 视频检索 + 垂域结构化数据（天气、股票、汇率、油价、万年历等），作为回答实时性问题的依据。
-
-## 安装
+为 agent 提供全网搜索能力：网页 / 图片 / 视频检索 + 垂域结构化数据（天气、股票、汇率、油价、万年历等），作为回答实时性问题的依据。## 安装
 
 两种方式任选其一：
 
@@ -35,16 +33,11 @@ dsh plugin --profile <name> add github:myg133/anspire-ai-search#develop
 | 配置项 | 说明 |
 |--------|------|
 | `region` | 服务区域（下拉二选一）：`ai-search-cn`（国内，默认）/ `ai-search-global`（海外） |
-| `apiKey` | Anspire API KEY，密钥框输入、自动脱敏；区域下方提供「获取 anspire-ai-search api-key」链接（随所选区域跳转对应申请地址） |
+| `apiKey` | Anspire API KEY，密钥框输入、自动脱敏；区域下方提供「获取 anspire-ai-search api-key」链接，点击即可前往申请 |
 | `timeoutMs` | 请求超时（毫秒），默认 30000 |
 | `defaultTopK` | 默认返回条数，默认 10 |
 
-**服务区域**：国内与海外为独立服务，API KEY 不通用。
-
-| 区域 | API 端点 | KEY 申请地址 |
-|------|----------|--------------|
-| `ai-search-cn` | `https://plugin.anspire.cn` | `https://open.anspire.cn/cus/login?service_code=50whsv` |
-| `ai-search-global` | `https://plugin.anspire.ai` | `https://opentoken.anspire.ai/cus/login?service_code=34x2cy` |
+**服务区域**：国内与海外为独立服务，API KEY 不通用。区域与申请入口的对应关系见插件设置页内的链接。
 
 **修改即时生效**（live），无需重启 dsh。配置持久化在 dsh 的 `settings.yaml`，由 dsh 统一管理。
 
@@ -53,7 +46,7 @@ dsh plugin --profile <name> add github:myg133/anspire-ai-search#develop
 ### 方式二：环境变量（兜底/CI 场景）
 
 ```bash
-export ANSPIRE_API_KEY="你的 key"   # 获取: https://open.anspire.cn
+export ANSPIRE_API_KEY="你的 key"   # 申请入口见插件设置页链接
 ```
 
 兼容的环境变量名：`ANSPIRE_API_KEY` > `ANPSIRE_API_KEY` > `DSP_ANSPIRE_KEY`（按此顺序取第一个非空）。
@@ -66,19 +59,19 @@ export ANSPIRE_API_KEY="你的 key"   # 获取: https://open.anspire.cn
 
 ```js
 {
-  baseUrl: 'https://plugin.anspire.cn',
+  region: 'ai-search-cn',   // 服务区域，决定请求端点
   timeoutMs: 30_000,
   defaultTopK: 10,
 }
 ```
 
-在 profile 级 `cordis.patch.yml` 中覆盖（按 id 定位本插件插入的行；`config` 是整体替换，需重述全部键）：
+在 profile 為 `cordis.patch.yml` 中覆盖（按 id 定位本插件插入的行；`config` 是整体替换，需重述全部键）：
 
 ```yaml
 # profile 的 cordis.patch.yml（~/.dsh/profiles/<name>/cordis.patch.yml）
 - id: anspire-ai-search
   config:
-    baseUrl: 'https://plugin.anspire.cn'
+    region: 'ai-search-global'
     timeoutMs: 20000
     defaultTopK: 20
 ```

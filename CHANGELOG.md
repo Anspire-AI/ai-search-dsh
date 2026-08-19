@@ -6,6 +6,9 @@
 
 ## [Unreleased]
 
+### Changed
+- README 移除 API 端点与 API KEY 申请地址（区域/申请入口信息以插件设置页内链接为准），避免在 npm/GitHub 文档中暴露。
+
 ### Fixed
 - `repository.url` 改为 OIDC 要求的格式（无 `git+` 前缀、无 `.git` 后缀），修复 trusted publishing 422。
 - CI 发布前升级 npm 至最新（OIDC 要求 ≥11.5.1，runner 自带版本可能过旧，旧版静默跳过 OIDC）。
