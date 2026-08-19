@@ -30,3 +30,6 @@ Thumbs.db
 /Deploy/
 /feature-*/
 /hotfix-*/
+
+# Deploy 分支的环境差异配置（模板，真实密钥走 k8s secret，不入库文件不含敏感信息）
+!apps/*/helm/environments/.env.*
