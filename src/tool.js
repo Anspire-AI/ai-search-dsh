@@ -5,6 +5,10 @@
  * defineTool() 仅是官方的编译辅助器（参数 spec → JSON Schema）。
  * 此处手工提供编译后的 JSON Schema 形态，避免对 @deepseek-ai/dsh-tools
  * 的运行时依赖（pnpm 默认不自动安装 peer 依赖，导入即 ERR_MODULE_NOT_FOUND）。
+ *
+ * 配置来源优先级（REQ-004）：
+ *   1. UI 插件设置页（ctx.settings 的 anspire-ai-search 命名空间，live 生效）
+ *   2. 环境变量 ANSPIRE_API_KEY / ANPSIRE_API_KEY / DSP_ANSPIRE_KEY（向后兼容）
  */
 import { readApiKey, validateParams, search, AnspireApiError } from './api.js'
 import { parseResponse, renderAsText } from './parse.js'
@@ -15,8 +19,28 @@ const DEFAULTS = {
   defaultTopK: 10,
 }
 
+/** 当前生效的配置快照（settings 层覆盖时被替换） */
+let currentConfig = { ...DEFAULTS }
+
+/** 读取当前生效配置（测试注入点） */
+export function getConfig() {
+  return currentConfig
+}
+
+/** 覆盖当前生效配置（settings 层与测试使用） */
+export function setConfig(next) {
+  currentConfig = { ...DEFAULTS, ...next }
+}
+
+/** 解析 API KEY：settings 优先，环境变量兜底 */
+function resolveApiKey(settingsSection) {
+  const fromSettings = settingsSection?.apiKey
+  if (typeof fromSettings === 'string' && fromSettings.trim()) return fromSettings.trim()
+  return readApiKey()
+}
+
 export function registerAnspireSearchTool(ctx, userConfig = {}) {
-  const config = { ...DEFAULTS, ...userConfig }
+  currentConfig = { ...DEFAULTS, ...userConfig }
 
   /** dsh ToolDefinition：name/description/parameters/output/execute */
   const definition = {
@@ -71,17 +95,21 @@ export function registerAnspireSearchTool(ctx, userConfig = {}) {
     },
 
     async execute(args, exec) {
+      const config = currentConfig
+
       // 1. 参数校验（领域失败作为规范值返回，不抛异常）
       const errors = validateParams(args)
       if (errors.length) {
         return `参数错误：\n${errors.map((e) => `- ${e}`).join('\n')}`
       }
 
-      // 2. 读取 API KEY（仅环境变量，不硬编码）
-      const apiKey = readApiKey()
+      // 2. 解析 API KEY（settings → 环境变量）
+      const apiKey = resolveApiKey(config.settingsSection)
       if (!apiKey) {
         return (
-          '未配置 Anspire API KEY。请在环境变量中设置 ANSPIRE_API_KEY（重启 dsh 生效）。\n' +
+          '未配置 Anspire API KEY。两种方式（任选其一）：\n' +
+          '1. 在 dsh 的插件设置页（Settings → Plugins → anspire-ai-search）填写 API KEY\n' +
+          '2. 设置环境变量 ANSPIRE_API_KEY 后重启 dsh\n' +
           '获取 API KEY：https://open.anspire.cn'
         )
       }
@@ -109,7 +137,7 @@ export function registerAnspireSearchTool(ctx, userConfig = {}) {
       } catch (err) {
         if (err instanceof AnspireApiError) {
           if (err.status === 401) {
-            return '鉴权失败（HTTP 401）：ANSPIRE_API_KEY 无效或已过期，请检查后重试。'
+            return '鉴权失败（HTTP 401）：API KEY 无效或已过期（检查插件设置页或环境变量），请修正后重试。'
           }
           return `搜索失败：${err.message}`
         }

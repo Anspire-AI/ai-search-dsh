@@ -22,7 +22,10 @@ test('插件入口：纯 JS 可被 Node 直接加载（无 TS 语法/缺失依�
 test('apply()：对 config 为 undefined 的调用容错（loader 对无 config 行的形态）', async () => {
   const plugin = await import('../index.js')
   const registered = []
-  const ctx = { tools: { register: (def) => { registered.push(def); return () => {} } } }
+  const ctx = {
+    tools: { register: (def) => { registered.push(def); return () => {} } },
+    inject: () => () => {}, // settings 服务缺席：可选注入不回调
+  }
   plugin.apply(ctx, undefined)
   assert.equal(registered.length, 1)
   assert.equal(registered[0].name, 'anspire_search')
@@ -39,9 +42,10 @@ test('apply()：向 ctx.tools 注册 anspire_search 工具', async () => {
         return () => disposers.push(def.name)
       },
     },
+    inject: () => () => {}, // REQ-004：settings 可选注入缺席时的形态
   }
 
-  const dispose = plugin.apply(ctx, plugin.Config)
+  const dispose = plugin.apply(ctx, undefined)
   assert.equal(registered.length, 1)
   assert.equal(typeof dispose, 'function')
 

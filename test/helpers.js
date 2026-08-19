@@ -12,6 +12,7 @@ export function makeCtx() {
         return () => {}
       },
     },
+    inject: () => () => {}, // REQ-004：settings 可选注入缺席时的形态
   }
   return { ctx, registered }
 }

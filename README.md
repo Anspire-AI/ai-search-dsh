@@ -18,7 +18,20 @@ dsh plugin --profile <name> add anspire-ai-search-dsh-plugin
 
 ## 配置
 
-### API KEY（必需）
+### 方式一：UI 插件设置页（推荐）
+
+启动 dsh 后打开 **Settings → Plugins → anspire-ai-search**，直接在页面配置：
+
+| 配置项 | 说明 |
+|--------|------|
+| `apiKey` | Anspire API KEY（获取: https://open.anspire.cn），密钥框输入、自动脱敏 |
+| `baseUrl` | API 基地址，默认 `https://plugin.anspire.cn` |
+| `timeoutMs` | 请求超时（毫秒），默认 30000 |
+| `defaultTopK` | 默认返回条数，默认 10 |
+
+**修改即时生效**（live），无需重启 dsh。配置持久化在 dsh 的 `settings.yaml`，由 dsh 统一管理。
+
+### 方式二：环境变量（兜底/CI 场景）
 
 ```bash
 export ANSPIRE_API_KEY="你的 key"   # 获取: https://open.anspire.cn
@@ -26,9 +39,11 @@ export ANSPIRE_API_KEY="你的 key"   # 获取: https://open.anspire.cn
 
 兼容的环境变量名：`ANSPIRE_API_KEY` > `ANPSIRE_API_KEY` > `DSP_ANSPIRE_KEY`（按此顺序取第一个非空）。
 
-### 插件配置（可选，通过 patch 覆盖）
+优先级：**UI 设置页 > 环境变量**。
 
-默认配置（`src/tool.js` 内置）：
+### 进阶：patch 行覆盖（部署级默认值）
+
+默认配置（`index.js` schema 默认值）：
 
 ```js
 {

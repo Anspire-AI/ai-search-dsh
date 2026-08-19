@@ -10,6 +10,16 @@
 - 初始化仓库：README、.gitignore、CHANGELOG。
 - 建立 Agent Workspace v2 工作区：`code/`（develop）、`BA/`（demand）、`Deploy/`(deploy)。
 
+## [0.2.0] - 2026-08-19
+
+### Added
+- API KEY 及插件配置支持 **UI 插件设置页**（Settings → Plugins → anspire-ai-search）(REQ-004)：
+  - 注册 `anspire-ai-search` settings 命名空间（`ctx.settings.register`），apiKey 用 `role('secret')` 标记（密钥框输入、wire 层自动脱敏）。
+  - `applies: 'live'`：UI 修改即时生效，无需重启 dsh。配置持久化在 dsh 的 settings.yaml。
+  - 配置优先级：UI 设置页（用户层）> patch 行 config（base 层）> schema 默认值；API KEY 额外保留环境变量兜底（`ANSPIRE_API_KEY` > `ANPSIRE_API_KEY` > `DSP_ANSPIRE_KEY`）。
+  - settings 为可选依赖（`ctx.inject(['settings'], ...)`）：服务缺席时（如 headless 极简 profile）自动降级为 base + 环境变量，插件照常工作。
+- 新增 `@deepseek-ai/schemastery` 运行时依赖（settings schema 构造必需；dsh 生态公共基础件，与 dsh-tools 共享同一实例）。
+
 ## [0.1.2] - 2026-08-19
 
 ### Fixed
